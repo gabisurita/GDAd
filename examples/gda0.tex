@@ -1,0 +1,130 @@
+\documentclass[
+  % Babel language, also used to load translations
+  portuguese,
+  %
+  % If you need it, you can add a custom barcode at the center
+  %globalid=SDAPS,
+  %
+  % And the following adds a per sheet barcode at the bottom left
+  %print_questionnaire_id,
+  %
+  % You can choose between twoside and oneside. twoside is the default, and
+  % requires the document to be printed and scanned in duplex mode.	
+  %oneside,
+  %pagemark,
+  %stamp
+  ]{sdaps}
+\usepackage[utf8]{inputenc}
+% For demonstration purposes
+\usepackage{multicol}
+
+\author{GDA - Grupo Discente de Avaliação}
+\title{Questionário do Estudante}
+
+\begin{document}
+  \begin{questionnaire}[noinfo]
+    % Set checkbox style to be circular
+    %\def\checkboxstyle{ellipse}
+    \begin{info}
+      A equipe do GDA agredece pela sua participação e paciência. Por favor, use apenas {\bf caneta azul ou preta}. Preencha os ítens de múltipla escolha com \checkedbox{}. Se cometer algum erro, corrija o ítem errado completando-o {\bf desta maneira} \correctedbox{} e marque a reposta correta com \checkedbox{}. {\bf Não escreva fora dos espaços indicados}. Se precisar de mais espaço, use o {\bf campo adicional no verso}.
+    \end{info}
+
+    \addinfo{Período}{2s2014}
+
+		% Cabeçalho da disciplina
+  	\section{Código da disciplina}  
+		  \begin{multicols}{3}
+		  	Preencha sigla + número (xyz) \\ ex: EA123
+				\begin{choicequestion}[3]{Sigla}
+				  \choiceitem{EA}
+				  \choiceitem{EE}
+				  \choiceitem{ET}
+				\end{choicequestion}
+				
+				\begin{choicegroup}{Número}
+				  \groupaddchoice{0}
+				  \groupaddchoice{1}
+				  \groupaddchoice{2}
+				  \groupaddchoice{3}
+				  \groupaddchoice{4}
+				  \groupaddchoice{5}
+				  \groupaddchoice{6}
+				  \groupaddchoice{7}
+				  \groupaddchoice{8}
+				  \groupaddchoice{9}            
+
+				  \choiceline{x}
+				  \choiceline{y}
+				  \choiceline{z}
+				\end{choicegroup}
+			\end{multicols}
+
+			\section{Sobre a Disciplina}
+				\begin{markgroup}{Classifique a disciplina cursada, dentre as demais disciplinas do curso, perante os seguintes temas:}
+					\markline{Importância para o curso}{Nenhuma}{Muita}
+					\markline{Estrutura da disciplina (ementa)}{Ruim}{Excelente}
+					\markline{Dificuldade}{Fácil}{Difícil}
+				\end{markgroup}
+				
+				\begin{choicequestion}[6]{Tempo de dedicação extraclasse (por semana):}
+				  \choiceitem{0h à 1h}
+				  \choiceitem{1h à 2h}
+				  \choiceitem{2h à 4h}
+				  \choiceitem{4h à 6h}
+				  \choiceitem{6h à 8h}
+				  \choiceitem{8h+}
+				\end{choicequestion}
+				
+				
+				\textbox{1.6cm}{Enumere os pontos mais importantes que aprendeu nesta disciplina:}
+				
+				\textbox{1.6cm}{Recomende materiais (livros, apostilas, sites):}
+				
+				\textbox{1.6cm}{Cite dicas para quem for cursar a disciplina:}
+				
+				\begin{markgroup}{Classifique, quando pertinente, os demais tópicos a seguir:}
+					{\bf Responda somente se usou:}\\
+					\markline{Importância da monitoria para o curso}{Nenhuma}{Muita}
+					\markline{Conhecimento e didática do auxiliar didático}{Nenhum}{Total}
+					{\bf Para as disciplinas de laboratório:}\\
+					\markline{Disponibilidade de equipamentos}{Nenhuma}{Total}
+					\markline{Qualidade dos equipamentos}{Nenhuma}{Total}
+				\end{markgroup}
+
+			\section{Sobre o Docente}
+				\begin{markgroup}{Classifique o docente perante os temas:}
+					\markline{Clareza e didática}{Ruim}{Excelente}
+					\markline{Interesse pelas aulas}{Nenhum}{Total}
+					\markline{Relacionamento com estudantes}{Ruim}{Excelente}
+					\markline{Incentivo à participação}{Nenhum}{Total}
+					\markline{Coerência nas avaliações}{Nenhuma}{Total}
+				\end{markgroup}
+				
+				\begin{markgroup}{Responda com respeito a atividade do docente nesta disciplina:}
+					\markline{Domínio da matéria}{Nenhum}{Total}
+					\markline{Capacidade de prender a atenção}{Ruim}{Excelente}
+					\markline{Importância da aula para o aprendizado}{Nenhuma}{Total}
+					\markline{Relacionamento dos conceitos com atividades práticas}{Nenhum}{Total}
+				\end{markgroup}
+
+				\singlemark{A dificuldade apontada é inerente a disciplina ou devido ao docente?}{Inerente a disciplina}{Devido ao docente}
+				
+				\textbox*{1.6cm}{Cite qualidades positivas do docente:}
+				
+				\textbox*{1.6cm}{Aponte, para o docente, pontos a melhorar:}
+				
+				\textbox*{1.6cm}{Cite dicas para quem for fazer uma disciplina com este docente:}
+				
+				\begin{choicequestion}[3]{Você faria outra disciplina com este docente?}
+				  \choiceitem{Sim, com certeza}
+				  \choiceitem{Talvez, se fosse necessário}
+				  \choiceitem{Não, em hipótese alguma}
+				\end{choicequestion}
+	
+    \section{Comentários adicionais}
+    	
+    \textbox{1.6cm}{Use este espaço para quaisquer comentários adicionais ou para completar qualquer uma das questões. Suas considerações são fundamentais para novas propostas de melhoria no curso. Comentários sobre o GDA ou sobre este fomulário também são bem vindos.}
+
+  \end{questionnaire}
+\end{document}
+

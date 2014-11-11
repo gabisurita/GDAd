@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf8 -*-
 # SDAPS - Scripts for data acquisition with paper based surveys
 # Copyright(C) 2008, Christoph Simon <post@christoph-simon.eu>
 # Copyright(C) 2008, Benjamin Berg <benjamin@sipsolutions.net>
@@ -23,17 +23,31 @@ empty/checked/filled and finds the written area in a textfield.
 """
 
 from sdaps import model
+from sdaps import script
 
-from . import buddies
+from sdaps.ugettext import ugettext, ungettext
+_ = ugettext
 
 
-def recognize(survey, filter):
-    # iterate over sheets
-    survey.iterate_progressbar(survey.questionnaire.recognize.recognize, filter)
-    survey.save()
+parser = script.subparsers.add_parser("recognize",
+    help=_("Run the optical mark recognition."),
+    description=_("""Iterates over all images and runs the optical mark
+    recognition. It will reevaluate sheets even if "recognize" has already
+    run or manual changes were made."""))
 
-def identify(survey, filter):
-    # iterate over sheets
-    survey.iterate_progressbar(survey.questionnaire.recognize.identify, filter)
-    survey.save()
+parser.add_argument('--identify',
+    help=_("Only identify the page properties, but don't recognize the checkbox states."),
+    action="store_true",
+    default=False)
+
+@script.connect(parser)
+@script.logfile
+def recognize(cmdline):
+    survey = model.survey.Survey.load(cmdline['project'])
+    import recognize
+    if cmdline['identify']:
+        return recognize.identify(survey)
+    else:
+        return recognize.recognize(survey)
+
 

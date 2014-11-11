@@ -24,9 +24,7 @@
 #include <cairo.h>
 
 static PyObject *wrap_get_a1_from_tiff(PyObject *self, PyObject *args);
-static PyObject *wrap_write_a1_to_tiff(PyObject *self, PyObject *args);
 static PyObject *wrap_get_rgb24_from_tiff(PyObject *self, PyObject *args);
-static PyObject *wrap_find_corner_marker(PyObject *self, PyObject *args);
 static PyObject *wrap_calculate_matrix(PyObject *self, PyObject *args);
 static PyObject *wrap_calculate_correction_matrix_masked(PyObject *self, PyObject *args);
 static PyObject *wrap_find_box_corners(PyObject *self, PyObject *args);
@@ -47,12 +45,10 @@ Pycairo_CAPI_t *Pycairo_CAPI;
 
 static PyMethodDef EvaluateMethods[] = {
 	{"get_a1_from_tiff",  wrap_get_a1_from_tiff, METH_VARARGS, "Creates a cairo A1 surface from a monochrome tiff file."},
-	{"write_a1_to_tiff",  wrap_write_a1_to_tiff, METH_VARARGS, "Appends a new page to an existing tiff file or create a new tiff file containing the pixel data from the surface."},
 	{"get_rgb24_from_tiff",  wrap_get_rgb24_from_tiff, METH_VARARGS, "Creates a cairo RGB24 surface from a (monochrome) tiff file."},
 	{"get_tiff_page_count",  wrap_get_tiff_page_count, METH_VARARGS, "Returns the number of pages a multipage tiff contains."},
 	{"get_tiff_resolution", wrap_get_tiff_resolution, METH_VARARGS, "Retrieves the resolution from the given page of the tiff file (in dots per mm)."},
 	{"check_tiff_monochrome",  wrap_check_tiff_monochrome, METH_VARARGS, "Check whether all pages of the tiff are monochrome."},
-	{"find_corner_marker",  wrap_find_corner_marker, METH_VARARGS, "Searches for a corner marker. The third parameter should be an integer specifying the corner (1: top left, 2: top right, 3: bottom right, 4: bottom left."},
 	{"calculate_matrix",  wrap_calculate_matrix, METH_VARARGS, "Calculates the transformation matrix transform the image into the survey coordinate system."},
 	{"calculate_correction_matrix_masked",  wrap_calculate_correction_matrix_masked, METH_VARARGS, "Calculates a corrected transformation matrix for the mask at the given the top left corner."},
 	{"find_box_corners",  wrap_find_box_corners, METH_VARARGS, "Tries to find the actuall corners of a box in the milimeter space."},
@@ -111,25 +107,6 @@ wrap_get_a1_from_tiff(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_AssertionError, "The image surface could not be created! Broken or non 1bit tiff file?");
 		return NULL;
 	}
-}
-
-static PyObject *
-wrap_write_a1_to_tiff(PyObject *self, PyObject *args)
-{
-	PycairoSurface *py_surface;
-	const char *filename = NULL;
-
-	if (!PyArg_ParseTuple(args, "sO!", &filename,
-	                                   &PycairoImageSurface_Type, &py_surface))
-		return NULL;
-
-	if (!write_a1_to_tiff(filename, py_surface->surface)) {
-		PyErr_SetString(PyExc_AssertionError, "Error writing new page to TIFF file (append/create)!");
-		return NULL;
-	}
-
-	Py_INCREF(Py_None);
-	return Py_None;
 }
 
 static PyObject *
@@ -205,32 +182,6 @@ wrap_check_tiff_monochrome(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-wrap_find_corner_marker(PyObject *self, PyObject *args)
-{
-	PyObject *result;
-	PycairoSurface *py_surface;
-	PycairoMatrix *py_matrix;
-	gint corner;
-	gdouble corner_x, corner_y;
-	gboolean success;
-
-	if (!PyArg_ParseTuple(args, "O!O!i",
-	                      &PycairoImageSurface_Type, &py_surface,
-	                      &PycairoMatrix_Type, &py_matrix, &corner))
-		return NULL;
-
-	success = find_corner_marker(py_surface->surface, &py_matrix->matrix, corner, &corner_x, &corner_y);
-
-	if (success) {
-		result = Py_BuildValue("dd", corner_x, corner_y);
-		return result;
-	} else {
-		PyErr_SetString(PyExc_AssertionError, "Could not find corner marker!");
-		return NULL;
-	}
-}
-
-static PyObject *
 wrap_calculate_matrix(PyObject *self, PyObject *args)
 {
 	PyObject *result;
@@ -266,7 +217,6 @@ wrap_calculate_correction_matrix_masked(PyObject *self, PyObject *args)
 	PycairoMatrix *py_matrix;
 	cairo_matrix_t *correction_matrix;
 	float mm_x, mm_y;
-	gdouble covered;
 
 	if (!PyArg_ParseTuple(args, "O!O!O!ff",
 	                      &PycairoImageSurface_Type, &py_surface,
@@ -275,12 +225,12 @@ wrap_calculate_correction_matrix_masked(PyObject *self, PyObject *args)
 	                      &mm_x, &mm_y))
 		return NULL;
 
-	correction_matrix = calculate_correction_matrix_masked(py_surface->surface, py_mask->surface, &py_matrix->matrix, mm_x, mm_y, &covered);
+	correction_matrix = calculate_correction_matrix_masked(py_surface->surface, py_mask->surface, &py_matrix->matrix, mm_x, mm_y);
 
 	if (correction_matrix) {
 		result = PycairoMatrix_FromMatrix(correction_matrix);
 		g_free(correction_matrix);
-		return Py_BuildValue("Nd", result, covered);
+		return result;
 	} else {
 		PyErr_SetString(PyExc_AssertionError, "Could not calculate the corrected matrix!");
 		return NULL;

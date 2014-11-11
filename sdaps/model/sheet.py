@@ -21,10 +21,6 @@ import buddy
 
 class Sheet(buddy.Object):
 
-    _pickled_attrs = {'survey', 'data', 'images', 'survey_id',
-                      'questionnaire_id', 'global_id', 'valid',
-                      'quality', 'recognized', 'verified'}
-
     def __init__(self):
         self.survey = None
         self.data = dict()
@@ -34,9 +30,6 @@ class Sheet(buddy.Object):
         self.global_id = None
         self.valid = 1
         self.quality = 1
-
-        self.recognized = False
-        self.verified = False
 
     def add_image(self, image):
         self.images.append(image)
@@ -51,55 +44,6 @@ class Sheet(buddy.Object):
                 return image
         return None
 
-    def reinit_state(self):
-        for k, v in self.data.iteritems():
-            obj = self.survey.questionnaire.find_object(k)
-
-            v._parent = obj
-
-    @property
-    def empty(self):
-        for k, v in self.data.iteritems():
-            if not v.empty:
-                return False
-
-        return True
-
-    @property
-    def complete(self):
-        """A boolean whether this sheet is complete in the sense that
-        every page of the questionnaire has been identified.
-        ie. it is false if there are missing pages"""
-
-        # Simply retrieve every page, and see if it is not None
-        for page in xrange(self.survey.questionnaire.page_count):
-            if self.get_page_image(page + 1) is None:
-                return False
-        return True
-
-    def __setattr__(self, attr, value):
-        # Nonexisting attributes should never be set.
-        if attr.startswith('_'):
-            object.__setattr__(self, attr, value)
-            return
-
-        assert attr in self._pickled_attrs
-
-        # We need to fall back to "None" for __init__ to work.
-        try:
-            old_value = getattr(self, attr)
-            force = False
-        except AttributeError:
-            old_value = None
-            force = True
-
-        if force or value != old_value:
-            object.__setattr__(self, attr, value)
-            # survey may be None if the sheet does not belong to a survey yet.
-            if self.survey is not None:
-                self.survey.questionnaire.notify_data_changed(None, None, attr, old_value)
-
-
 class Image(buddy.Object):
 
     def __init__(self):
@@ -112,7 +56,4 @@ class Image(buddy.Object):
         self.survey_id = None
         self.global_id = None
         self.questionnaire_id = None
-        #: Whether the page should be ignored (because it is a blank back side)
-        self.ignored = False
-
 

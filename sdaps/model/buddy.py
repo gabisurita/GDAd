@@ -51,12 +51,13 @@ class Object(object):
             return getattr(self, '_%s_object_' % name)
 
     def __getstate__(self):
-        u'''do not pickle pickle any "private" data.
+        u'''do not pickle buddy instances.
+        buddy classes are class attributes, which are not pickled.
         '''
         dict = self.__dict__.copy()
         keys = dict.keys()
         for key in keys:
-            if key.startswith('_'):
+            if key.endswith('_object_'):
                 del dict[key]
         return dict
 

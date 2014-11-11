@@ -20,8 +20,6 @@ import csv
 
 from sdaps import model
 
-import os
-import os.path
 
 class Questionnaire(model.buddy.Buddy):
 
@@ -29,23 +27,13 @@ class Questionnaire(model.buddy.Buddy):
     name = 'csvdata'
     obj_class = model.questionnaire.Questionnaire
 
-    def open_csv(self, filename, export_images=False):
+    def export_header(self):
         header = ['questionnaire_id', 'global_id']
         for qobject in self.obj.qobjects:
             header.extend(qobject.csvdata.export_header())
-        self.file = file(filename, 'w')
+        self.file = file(self.obj.survey.new_path('data_%i.csv'), 'w')
         self.csv = csv.DictWriter(self.file, header)
-        self.csv.writerow({value: value for value in header})
-
-        if export_images:
-            from sdaps.utils.image import ImageWriter
-
-            img_path = os.path.dirname(filename)
-            img_prefix = os.path.join(os.path.splitext(os.path.basename(filename))[0], 'img')
-
-            self.image_writer = ImageWriter(img_path, img_prefix)
-        else:
-            self.image_writer = None
+        self.csv.writerow(dict([(value, value) for value in header]))
 
     def export_data(self):
         data = {'questionnaire_id': unicode(self.obj.sheet.questionnaire_id),
@@ -96,30 +84,13 @@ class Choice(model.buddy.Buddy):
         return [self.obj.id_csv(box.id) for box in self.obj.boxes]
 
     def export_data(self):
-        return dict([(self.obj.id_csv(box.id), box.csvdata.export_data()) for box in self.obj.boxes])
-        return {self.obj.id_csv(box.id) : box.csvdata.export_data() for box in self.obj.boxes}
+        return dict([(self.obj.id_csv(box.id), '%i' % box.data.state) for box in self.obj.boxes])
 
     def import_data(self, data):
         for box in self.obj.boxes:
             if self.obj.id_csv(box.id) in data:
-                box.csvdata.import_data(data[self.obj.id_csv(box.id)])
+                box.data.state = int(data[self.obj.id_csv(box.id)])
 
-class Text(model.buddy.Buddy):
-
-    __metaclass__ = model.buddy.Register
-    name = 'csvdata'
-    obj_class = model.questionnaire.Text
-
-    def export_header(self):
-        return [self.obj.id_csv(box.id) for box in self.obj.boxes]
-
-    def export_data(self):
-        return dict([(self.obj.id_csv(box.id), box.csvdata.export_data()) for box in self.obj.boxes])
-
-    def import_data(self, data):
-        for box in self.obj.boxes:
-            if self.obj.id_csv(box.id) in data:
-                box.csvdata.import_data(data[self.obj.id_csv(box.id)])
 
 class Mark(model.buddy.Buddy):
 
@@ -153,48 +124,4 @@ class Additional_Mark(model.buddy.Buddy):
     def import_data(self, data):
         if self.obj.id_csv() in data:
             self.obj.set_answer(int(data[self.obj.id_csv()]))
-
-
-class Box(model.buddy.Buddy):
-
-    __metaclass__ = model.buddy.Register
-    name = 'csvdata'
-    obj_class = model.questionnaire.Box
-
-    def export_data(self):
-        return str(int(self.obj.data.state))
-
-    def import_data(self, data):
-        self.obj.data.state = int(data)
-
-
-class Textbox(Box):
-
-    __metaclass__ = model.buddy.Register
-    name = 'csvdata'
-    obj_class = model.questionnaire.Textbox
-
-    def export_data(self):
-        data = str(int(self.obj.data.state))
-
-        image_writer = self.obj.question.questionnaire.csvdata.image_writer
-
-        if self.obj.data.state and self.obj.data.text:
-            data = self.obj.data.text.encode('utf-8')
-        elif self.obj.data.state and image_writer is not None:
-            data = image_writer.output_box(self.obj)
-
-        return data
-
-    def import_data(self, data):
-        try:
-            state = int(data)
-            text = u''
-        except ValueError:
-            state = 1
-            text = unicode(data)
-
-        self.obj.data.state = state
-        self.obj.data.text = state
-
 

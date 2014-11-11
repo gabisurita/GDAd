@@ -31,13 +31,11 @@ class Sheet(model.buddy.Buddy):
 
     def load(self):
         for image in self.obj.images:
-            if not image.ignored:
-                image.surface.load()
+            image.surface.load()
 
     def clean(self):
         for image in self.obj.images:
-            if not image.ignored:
-                image.surface.clean()
+            image.surface.clean()
 
 
 class Questionnaire(model.buddy.Buddy):

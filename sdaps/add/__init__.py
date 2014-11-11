@@ -19,99 +19,84 @@
 import os
 
 from sdaps import model
-from sdaps import image
-import shutil
+from sdaps import script
 
-from sdaps.utils.ugettext import ugettext, ungettext
+from sdaps.ugettext import ugettext, ungettext
 _ = ugettext
 
-def _insert_dummy_pages(survey, duplex_scan):
-    # Insert dummy pages if the survey is duplex and the duplex option was not
-    # passed
-    if survey.defs.duplex:
-        # One image per questionnaire page in duplex mode
-        image_count_factor = 1
-        # No dummy pages in duplex mode
-        insert_dummy_pages = False
-    else:
-        # Two images per questionnaire page in duplex mode
-        image_count_factor = 2
 
-        # In simplex mode insertion of dummy pages depends on the command line
-        # optoin (default is True)
-        if duplex_scan:
-            insert_dummy_pages = False
-        else:
-            insert_dummy_pages = True
+parser = script.subparsers.add_parser("add",
+    help=_("Add scanned questionnaires to the survey."),
+    description=_("""This command is used to add scanned images to the survey.
+    The image data needs to be a (multipage) 300dpi monochrome TIFF file. You
+    may choose not to copy the data into the project directory. In that case
+    the data will be referenced using a relative path."""))
 
-    return insert_dummy_pages, image_count_factor
+parser.add_argument('--force',
+    help=_("Force adding the images even if the page count is wrong (only use if you know what you are doing)."),
+    action="store_true",
+    default=False)
+parser.add_argument('--copy',
+    help=_("Copy the files into the directory (default)."),
+    dest="copy",
+    action="store_true",
+    default=True)
+parser.add_argument('--no-copy',
+    help=_("Do not copy the files into the directory."),
+    dest="copy",
+    action="store_false")
 
-def check_image(survey, file, duplex_scan=False, force=False, message=False):
+parser.add_argument('images',
+    help=_("A number of TIFF image files."),
+    nargs='+')
 
-    insert_dummy_pages, image_count_factor = _insert_dummy_pages(survey, duplex_scan)
+@script.connect(parser)
+@script.logfile
+def add(cmdline):
+    from sdaps import image
+    import subprocess
+    import sys
+    import shutil
 
-    if not image.check_tiff_monochrome(file):
-        if message:
+    survey = model.survey.Survey.load(cmdline['project'])
+
+    for file in cmdline['images']:
+
+        print _('Processing %s') % file
+
+        if not image.check_tiff_monochrome(file):
             print _('Invalid input file %s. You need to specify a (multipage) monochrome TIFF as input.') % (file,)
-        return False
+            raise AssertionError()
 
-    num_pages = image.get_tiff_page_count(file)
+        num_pages = image.get_tiff_page_count(file)
 
-    c = survey.questionnaire.page_count
-    if not insert_dummy_pages:
-        c = c * image_count_factor
-
-    # This test is on the image count that needs to come from the file
-    if num_pages % c != 0 and not force:
-        if message:
+        c = survey.questionnaire.page_count
+        if num_pages % c != 0 and not cmdline['force']:
             print _('Not adding %s because it has a wrong page count (needs to be a mulitple of %i).') % (file, c)
-        return False
+            continue
 
-    return True
+        if cmdline['copy']:
+            tiff = survey.new_path('%i.tif')
+            shutil.copyfile(file, tiff)
+        else:
+            tiff = file
 
-def add_image(survey, file, duplex_scan=False, force=False, copy=True):
+        if cmdline['copy']:
+            tiff = os.path.basename(tiff)
+        else:
+            tiff = os.path.relpath(os.path.abspath(tiff), survey.survey_dir)
 
-    insert_dummy_pages, image_count_factor = _insert_dummy_pages(survey, duplex_scan)
-
-    if not check_image(survey, file, duplex_scan, force, message=True):
-        return
-
-    num_pages = image.get_tiff_page_count(file)
-
-    c = survey.questionnaire.page_count
-    if not insert_dummy_pages:
-        c = c * image_count_factor
-
-    if insert_dummy_pages:
-        c = c * image_count_factor
-
-    if copy:
-        tiff = survey.new_path('%i.tif')
-        shutil.copyfile(file, tiff)
-    else:
-        tiff = file
-
-    if copy:
-        tiff = os.path.basename(tiff)
-    else:
-        tiff = os.path.relpath(os.path.abspath(tiff), survey.survey_dir)
-
-    pages = range(num_pages)
-    while len(pages) > 0:
-        sheet = model.sheet.Sheet()
-        survey.add_sheet(sheet)
-        while len(pages) > 0 and len(sheet.images) < c:
-            img = model.sheet.Image()
-            sheet.add_image(img)
-            img.filename = tiff
-            img.tiff_page = pages.pop(0)
-
-            # And a dummy page if required
-            if insert_dummy_pages:
+        pages = range(num_pages)
+        while len(pages) > 0:
+            sheet = model.sheet.Sheet()
+            survey.add_sheet(sheet)
+            while len(pages) > 0 and len(sheet.images) < c:
                 img = model.sheet.Image()
                 sheet.add_image(img)
+                img.filename = tiff
+                img.tiff_page = pages.pop(0)
 
-                img.filename = "DUMMY"
-                img.tiff_page = -1
-                img.ignored = True
+        print _('Done')
+
+    survey.save()
 

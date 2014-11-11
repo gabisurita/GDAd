@@ -30,14 +30,14 @@ from reportlab.lib import units
 from reportlab.lib import pagesizes
 
 mm = units.mm
-PADDING = 15 * mm
+
 
 class DocTemplate(platypus.BaseDocTemplate):
 
-    def __init__(self, filename, title, metainfo={}, papersize=pagesizes.A4):
+    def __init__(self, filename, title, metainfo={}):
         platypus.BaseDocTemplate.__init__(
             self, filename,
-            pagesize=papersize,
+            pagesize=pagesizes.A4,
             leftMargin=0,
             rightMargin=0,
             topMargin=0,
@@ -50,23 +50,23 @@ class DocTemplate(platypus.BaseDocTemplate):
             #title=None,
             #author=None,
             #_pageBreakQuick=1
-        self.addPageTemplates(TitlePageTemplate(papersize, title))
-        self.addPageTemplates(PageTemplate(papersize))
+        self.addPageTemplates(TitlePageTemplate(title))
+        self.addPageTemplates(PageTemplate())
 
 
 class TitlePageTemplate(platypus.PageTemplate):
 
-    def __init__(self, papersize, title):
+    def __init__(self, title):
         self.title = title
         frames = [
             platypus.Frame(
-                PADDING, papersize[1] / 2,
-                papersize[0] - 2*PADDING, papersize[1] / 6,
+                20 * mm, 160 * mm,
+                170 * mm, 40 * mm,
                 showBoundary=0
             ),
             platypus.Frame(
-                PADDING, PADDING,
-                papersize[0] - 2*PADDING, papersize[1] / 2 - PADDING,
+                20 * mm, 20 * mm,
+                170 * mm, 110 * mm,
                 showBoundary=0
             ),
         ]
@@ -92,11 +92,11 @@ class TitlePageTemplate(platypus.PageTemplate):
 
 class PageTemplate(platypus.PageTemplate):
 
-    def __init__(self, papersize):
+    def __init__(self):
         frames = [
             platypus.Frame(
-                PADDING, PADDING,
-                papersize[0] - 2*PADDING, papersize[1] - 2*PADDING,
+                15 * mm, 15 * mm,
+                180 * mm, 270 * mm,
                 showBoundary=0
             )
         ]

@@ -24,26 +24,16 @@ from sdaps import defs
 
 from sdaps import log
 
-from sdaps.utils.ugettext import ugettext, ungettext
+from sdaps.ugettext import ugettext, ungettext
 _ = ugettext
 
-valid_styles = ['classic', 'code128', 'custom', 'qr']
-valid_checkmodes = ['checkcorrect', 'check', 'fill']
+valid_styles = ['classic', 'code128']
+
 
 class Defs(object):
-    """General definitions that are valid for this survey.
-
-    :ivar paper_width: Width of the paper in mm.
-    :ivar paper_height: Height of the paper in mm.
-    :ivar print_questionnaire_id: Whether a questionnaire ID is printed on each sheet.
-    :ivar print_survey_id: Whether a survey ID is printed on each sheet.
-    :ivar style: The style that is used for ID marking.
-    :ivar duplex: Whether the questionnaire is duplex or not.
-    """
-
     # Force a certain set of options using slots
     __slots__ = ['paper_width', 'paper_height', 'print_questionnaire_id',
-                 'print_survey_id', 'style', 'duplex', 'checkmode']
+                 'print_survey_id', 'style', 'duplex']
 
     def get_survey_id_pos(self):
         assert(self.style == 'classic')
@@ -79,18 +69,7 @@ class Defs(object):
 
 class Survey(object):
 
-    """The main survey object.
-
-    :ivar defs: The :py:class:`model.survey.Defs` instance for this survey.
-    :ivar survey_id: The survey ID of this survey.
-    :ivar global_id: The global ID set for this survey. It is used during the "stamp" step.
-    :ivar questionnaire: The py:class:`model.questionnaire.Questionnaire` instance representing the questionnaire.
-    :ivar title: The title of the survey.
-    :ivar info: Dictionary with general information about the survey.
-    :ivar questionnaire_ids: A List of used questionnaire IDs.
-    """
-
-    pickled_attrs = set(('sheets', 'defs', 'survey_id', 'questionnaire_ids', 'questionnaire', 'version'))
+    pickled_attrs = set(('sheets', 'defs', 'survey_id', 'questionnaire_ids', 'questionnaire'))
 
     def __init__(self):
         self.questionnaire = None
@@ -101,7 +80,6 @@ class Survey(object):
         self.global_id = None
         self.questionnaire_ids = list()
         self.index = 0
-        self.version = 4
         self.defs = Defs()
 
     def add_questionnaire(self, questionnaire):
@@ -126,10 +104,6 @@ class Survey(object):
             qobject.calculate_survey_id(md5)
 
         for defs_slot in self.defs.__slots__:
-            # Backward compatibility
-            if defs_slot == 'checkmode' and self.defs.checkmode == "checkcorrect":
-                continue
-
             if isinstance(self.defs.__getattribute__(defs_slot), float):
                 md5.update(str(round(self.defs.__getattribute__(defs_slot), 1)))
             else:
@@ -163,18 +137,6 @@ class Survey(object):
         for key, value in config.items('info'):
             survey.info[key.decode('utf-8')] = value.decode('utf-8')
 
-        # Early versions of SDAPS 1.0 did not have the file version number
-        if not hasattr(survey, 'version'):
-            survey.version = 1
-
-        # Before upgrading, reinit states, so events are "fired" correctly.
-        survey.questionnaire.reinit_state()
-        for sheet in survey.sheets:
-            sheet.reinit_state()
-
-        # Run any upgrade routine (if necessary)
-        survey.upgrade()
-
         return survey
 
     @staticmethod
@@ -192,7 +154,7 @@ class Survey(object):
         # Hack to include comments. Set allow_no_value here, and add keys
         # with a '#' in the front and no value.
         config = ConfigParser.SafeConfigParser(allow_no_value=True)
-
+            
         config.optionxform = str
         config.add_section('sdaps')
         config.add_section('info')
@@ -204,7 +166,7 @@ class Survey(object):
         else:
             config.set('sdaps', 'global_id', '')
 
-        for key, value in sorted(self.info.iteritems()):
+        for key, value in self.info.iteritems():
             config.set('info', key.encode('utf-8'), value.encode('utf-8'))
 
         config.set('defs', '# These values are not read back, they exist for information only!')
@@ -232,7 +194,6 @@ class Survey(object):
     def get_sheet(self):
         return self.sheets[self.index]
 
-    #: The currently selected sheet. Usually it will be changed by :py:meth:`iterate` or similar.
     sheet = property(get_sheet)
 
     def iterate(self, function, filter=lambda: True, *args, **kwargs):
@@ -245,13 +206,8 @@ class Survey(object):
     def iterate_progressbar(self, function, filter=lambda: True):
         '''call function once for each sheet and display a progressbar
         '''
-        count = 0
-        for self.index in range(len(self.sheets)):
-            if filter():
-                count += 1
-
-        print ungettext('%i sheet', '%i sheets', count) % count
-        if count == 0:
+        print ungettext('%i sheet', '%i sheets', len(self.sheets)) % len(self.sheets)
+        if len(self.sheets) == 0:
             return
 
         log.progressbar.start(len(self.sheets))
@@ -297,8 +253,6 @@ class Survey(object):
         return True
 
     def validate_questionnaire_id(self, qid):
-        """Do style specific sanity checks on the questionnaire ID."""
-
         if self.defs.style == "classic":
             # The ID needs to be an integer
             try:
@@ -313,11 +267,6 @@ class Survey(object):
                     log.error(_("Invalid character %s in questionnaire ID \"%s\" in \"code128\" style!") % (c, qid))
                     sys.exit(1)
             return qid
-        elif self.defs.style == "custom":
-            log.error(_("SDAPS cannot draw a questionnaire ID with the \"custom\" style. Do this yourself somehow!"))
-            sys.exit(1)
-        elif self.defs.style == "qr":
-          return qid
         else:
             AssertionError()
 
@@ -330,56 +279,4 @@ class Survey(object):
             if not key in self.pickled_attrs:
                 del dict[key]
         return dict
-
-    def upgrade(self):
-        """Ensure that all data structures conform to this version of SDAPS."""
-
-        msg = _('Running upgrade routines for file format version %i')
-        if self.version < 2:
-            log.warn(msg % (1))
-            # Changes between version 1 and 2:
-            #  * Simplex surveys get a dummy page added for every image. This
-            #    way they can be handled in the same way as "duplex" mode
-            #    (and duplex scan can be supported).
-            #  * The data for "Textbox" has a string. This will be used in the
-            #    report if it contains data.
-
-            # Insert dummy images.
-            if not self.defs.duplex:
-                from sdaps.model.sheet import Image
-
-                for sheet in self.sheets:
-                    images = sheet.images
-
-                    # And re-add
-                    sheet.images = list()
-                    for img in images:
-                        sheet.add_image(img)
-                        img.ignored = False
-
-                        dummy = Image()
-                        dummy.filename = "DUMMY"
-                        dummy.tiff_page = -1
-                        dummy.ignored = True
-
-                        sheet.add_image(dummy)
-
-            # Add the "text" attribute to Textbox.
-            from sdaps.model.data import Textbox
-            for sheet in self.sheets:
-                for data in sheet.data.itervalues():
-                    if isinstance(data, Textbox):
-                        data.text = unicode()
-
-        if self.version < 3:
-            log.warn(msg % (3))
-            for sheet in self.sheets:
-                sheet.recognized = False
-                sheet.verified = False
-
-        if self.version < 4:
-            log.warn(msg % (4))
-            self.defs.checkmode = "checkcorrect"
-
-        self.version = 4
 

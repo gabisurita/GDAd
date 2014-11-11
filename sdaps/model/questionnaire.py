@@ -15,12 +15,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+u'''
 
+Hinweis zu den Diamantstrukturen
 
-# The code uses multiple inheritance; however, most of the additional base
-# classes are solely used as mixins. This means they must not contain any
-# __init__ functions, as that could cause trouble.
+Bei Klassen mit mehreren Basisklassen definiert maximal eine Basisklasse
+eine eigene __init__ - Funktion. Die anderen Klassen sind "nur" Mixin - Klassen.
+Dadurch werden die Probleme der Diamantstruktur umgangen.
 
+'''
 
 import buddy
 import data
@@ -51,7 +54,6 @@ class Questionnaire(buddy.Object):
         self.qobjects = list()
         self.last_id = (0, 0)
         self.init_attributes()
-        self._notify_changed_list = list()
 
     def init_attributes(self):
         self.page_count = 0
@@ -72,31 +74,12 @@ class Questionnaire(buddy.Object):
 
     sheet = property(get_sheet)
 
-    def notify_data_changed(self, qobj, dobj, name, old_value):
-        for func in self._notify_changed_list:
-            func(self, qobj, dobj, name, old_value)
-
-    def connect_data_changed(self, func):
-        self._notify_changed_list.append(func)
-
-    def disconnect_data_changed(self, func):
-        self._notify_changed_list.remove(func)
-
     def __unicode__(self):
         return unicode().join(
             [u'%s\n' % self.__class__.__name__] +
             [unicode(qobject) for qobject in self.qobjects]
         )
 
-    def find_object(self, oid):
-        for qobject in self.qobjects:
-            obj = qobject.find_object(oid)
-
-            if obj is not None:
-                return obj
-
-    def reinit_state(self):
-        self._notify_changed_list = list()
 
 class QObject(buddy.Object):
     '''
@@ -115,7 +98,7 @@ class QObject(buddy.Object):
         pass
 
     def init_id(self, id):
-        self.id = id[:-1] + (id[-1] + 1,)
+        self.id = (id[0], id[1] + 1)
         return self.id
 
     def add_box(self, box):
@@ -150,18 +133,6 @@ class QObject(buddy.Object):
             self.__class__.__name__,
         )
 
-    def find_object(self, oid):
-        if self.id == oid:
-            return self
-
-        for box in self.boxes:
-            obj = box.find_object(oid)
-
-            if obj is not None:
-                return obj
-
-        return None
-
 
 class Head(QObject):
 
@@ -170,7 +141,7 @@ class Head(QObject):
         self.title = unicode()
 
     def init_id(self, id):
-        self.id = (id[0] + 1, ) + (0,)*(len(id)-1)
+        self.id = (id[0] + 1, 0)
         return self.id
 
     def __unicode__(self):
@@ -368,10 +339,6 @@ class Box(buddy.Object, DataObject):
             (u'%.1f' % self.height).rjust(5),
             self.text
         )
-
-    def find_object(self, oid):
-        if self.id == oid:
-            return self
 
 
 class Checkbox(Box):

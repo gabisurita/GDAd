@@ -35,32 +35,23 @@ class Questionnaire(model.buddy.Buddy):
     obj_class = model.questionnaire.Questionnaire
 
     def init(self):
-        """Initialize or reset the state of the calculate module."""
         self.count = 0
         # iterate over qobjects
         for qobject in self.obj.qobjects:
             qobject.calculate.init()
 
     def read(self):
-        """The function collects the data from a sheet. You should use
-        :py:meth:`Survey.iterate` to call it for each sheet that needs to be
-        counted."""
         self.count += 1
         # iterate over qobjects
         for qobject in self.obj.qobjects:
             qobject.calculate.read()
 
     def calculate(self):
-        """Call once after :py:meth:`Questionnaire.calculate.read` to calculate
-        statistical values like the standard deviation."""
         # iterate over qobjects
         for qobject in self.obj.qobjects:
             qobject.calculate.calculate()
 
     def reference(self):
-        """Can be used to calculate a reference value. You can later check
-        whether there was a significant difference to the previous run. The
-        `significant` property will be set accordingly."""
         # iterate over qobjects
         for qobject in self.obj.qobjects:
             qobject.calculate.reference()
@@ -93,12 +84,6 @@ class Question(QObject):
 
 
 class Choice(Question):
-    """
-    :ivar count: Number of times the question was answered.
-    :ivar values: Dictionary for each box with the ratio the answer was choosen.
-    :ivar significant: Whether there was a significant difference to the reference run.
-    """
-
 
     __metaclass__ = model.buddy.Register
     name = 'calculate'
@@ -106,8 +91,8 @@ class Choice(Question):
 
     def init(self):
         self.count = 0
-        self.values = {box.value: 0 for box in self.obj.boxes}
-        self.significant = {box.value: 0 for box in self.obj.boxes}
+        self.values = dict([(box.value, 0) for box in self.obj.boxes])
+        self.significant = dict([(box.value, 0) for box in self.obj.boxes])
 
     def read(self):
         self.count += 1
@@ -128,13 +113,6 @@ class Choice(Question):
 
 
 class Mark(Question):
-    """
-    :ivar count: Number of times the question was answered.
-    :ivar values: Dictionary for each box with the ratio the value was choosen.
-    :ivar mean: The average value that was choosen.
-    :ivar standard_deviation: The average value that was choosen.
-    :ivar significant: Whether there was a significant difference to the reference run.
-    """
 
     __metaclass__ = model.buddy.Register
     name = 'calculate'
@@ -142,10 +120,10 @@ class Mark(Question):
 
     def init(self):
         self.count = 0
-        self.values = {box.value + 1: 0 for box in self.obj.boxes}
+        self.values = dict([(x, 0) for x in range(1, 6)])
         self.significant = 0
         self.mean = 0
-        self.standard_deviation = 0
+        self.standard_derivation = 0
 
     def read(self):
         answer = self.obj.get_answer()
@@ -159,7 +137,7 @@ class Mark(Question):
                 self.values[mark] = self.values[mark] / float(self.count)
             self.mean = sum(
                 [mark * value for mark, value in self.values.items()])
-            self.standard_deviation = math.sqrt(sum([
+            self.standard_derivation = math.sqrt(sum([
                 value * pow(mark - self.mean, 2)
                 for mark, value in self.values.items()]))
             if hasattr(self, 'ref_count'):

@@ -150,7 +150,6 @@ rm -rf "$PROJECT"
 
 # Add and recognize test data
 "$SDAPS" "$PROJECT" add "data/tex/test_without_ids.tif"
-"$SDAPS" "$PROJECT" add "data/tex/test_without_ids_2.tif"
 "$SDAPS" "$PROJECT" recognize
 
 
@@ -162,23 +161,8 @@ rm -rf "$PROJECT"
 # Compare info files
 ###########################################################
 
-for i in projects/*; do
-  success=0
-  error=0
+for i in data/info_files/*; do
   name=`basename "$i"`
-  for j in "data/info_files/$name" data/info_files/$name.*; do
-    if [ ! -f "$j" ]; then
-      continue;
-    fi;
-    # This ignores the title; for whatever reason the \LaTeX
-    # is written out differently with newer latex versions.
-    diff -I '^title' "$j" "$i/info" && success=1 || error=1
-  done
-
-  if [ $success -eq 0 -a $error -ne 0 ]; then
-    # Throw error
-    echo "None of the info files match for $name!"
-    exit 1;
-  fi
+  diff "$i" "projects/$name/info"
 done
 

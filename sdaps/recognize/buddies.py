@@ -24,10 +24,10 @@ from sdaps import matrix
 from sdaps import surface
 from sdaps import image
 from sdaps import defs
-from sdaps.utils.exceptions import RecognitionError
+from sdaps.utils import RecognitionError
 from sdaps import log
 
-from sdaps.utils.ugettext import ugettext, ungettext
+from sdaps.ugettext import ugettext, ungettext
 _ = ugettext
 
 pt_to_mm = 25.4 / 72.0
@@ -50,27 +50,18 @@ class Sheet(model.buddy.Buddy):
 
         # Load all images of this sheet
         for image in self.obj.images:
-            if not image.ignored:
-                image.rotated = 0
-                image.surface.load()
+            image.rotated = 0
+            image.surface.load()
 
         failed_pages = set()
 
         # Matrix recognition for all of them
-        matrix_errors = set()
         for page, image in enumerate(self.obj.images):
             try:
                 image.recognize.calculate_matrix()
             except RecognitionError:
-                matrix_errors.add(page)
-
-        # We need to check the matrix_errors. Some are expected in simplex mode
-        for page in matrix_errors:
-            # in simplex mode every page will have a matrix; it might be a None
-            # matrix though
-
-            log.warn(_('%s, %i: Matrix not recognized.') % (self.obj.images[page].filename, self.obj.images[page].tiff_page))
-            failed_pages.add(page)
+                log.warn(_('%s, %i: Matrix not recognized.') % (image.filename, image.tiff_page))
+                failed_pages.add(page)
 
         # Rotation for all of them
         for page, image in enumerate(self.obj.images):
@@ -81,21 +72,48 @@ class Sheet(model.buddy.Buddy):
                 log.warn(_('%s, %i: Rotation not found.') % (image.filename, image.tiff_page))
                 failed_pages.add(page)
 
-        # Copy the rotation over (if required) and print warning if the rotation is unknown
-        self.duplex_copy_image_attr(failed_pages, 'rotated', _("Neither %s, %i or %s, %i has a known rotation!"))
+        # In simplex mode, all rotations have to be there now,
+        # in duplex mode we may need to copy them over from the other page.
+        if duplex_mode:
+            i = 0
+            while i < len(self.obj.images):
+                # Try to recover the page rotation
+                failed = (i in failed_pages or i + 1 in failed_pages)
+
+                first = self.obj.images[i]
+                second = self.obj.images[i + 1]
+
+                if first.rotated is None and second.rotated is None:
+                    # Whoa, that should not happen.
+                    if not failed:
+                        log.warn(_("Neither %s, %i or %s, %i has a known rotation!" %
+                                 (first.filename, first.tiff_page, second.filename, second.tiff_page)))
+                        failed_pages.add(i)
+                        failed_pages.add(i + 1)
+                elif first.rotated is None:
+                    first.rotated = second.rotated
+                elif second.rotated is None:
+                    second.rotated = first.rotated
+                elif first.rotated != second.rotated:
+                    if not failed:
+                        log.warn(_("Found inconsistency. %s, %i and %s, %i should have the same rotation, but don't!" %
+                                 (first.filename, first.tiff_page, second.filename, second.tiff_page)))
+                        failed_pages.add(i)
+                        failed_pages.add(i + 1)
+
+                i += 2
 
         # Reload any image that is rotated.
         for page, image in enumerate(self.obj.images):
-            if image.rotated and not image.ignored:
+            if image.rotated:
                 image.surface.load()
                 # And redo the whole matrix stuff ...
                 # XXX: It would be better to manipulate the matrix instead.
                 try:
                     image.recognize.calculate_matrix()
                 except RecognitionError:
-                    if duplex_mode:
-                        log.warn(_('%s, %i: Matrix not recognized (again).') % (image.filename, image.tiff_page))
-                        failed_pages.add(page)
+                    log.warn(_('%s, %i: Matrix not recognized (again).') % (image.filename, image.tiff_page))
+                    failed_pages.add(page)
 
         ############
         # At this point we can extract the page numbers and IDs as neccessary.
@@ -112,65 +130,41 @@ class Sheet(model.buddy.Buddy):
                 image.page_number = None
                 failed_pages.add(page)
 
-        i = 0
-        while i < len(self.obj.images):
-            # We try to recover at least the page number of failed pages
-            # this way.
-            # NOTE: In simplex mode dummy pages will be inserted, so one page
-            # always has no page number, and the other one has one.
-            # This is exactly what we want, so we don't need to do anything
-            # (except warn if we did not find any page!)
-            failed = (i in failed_pages or i + 1 in failed_pages)
+        if duplex_mode:
+            i = 0
+            while i < len(self.obj.images):
+                # We try to recover at least the page number of failed pages
+                # this way.
+                failed = (i in failed_pages or i + 1 in failed_pages)
 
-            first = self.obj.images[i]
-            second = self.obj.images[i + 1]
+                first = self.obj.images[i]
+                second = self.obj.images[i + 1]
 
-            if first.page_number is None and second.page_number is None:
-                if not failed:
-                    # Whoa, that should not happen.
-                    log.warn(_("Neither %s, %i or %s, %i has a known page number!" %
-                             (first.filename, first.tiff_page, second.filename, second.tiff_page)))
-                    failed_pages.add(i)
-                    failed_pages.add(i + 1)
-
-            elif duplex_mode == False:
-                # Simplex mode is special, as we know that one has to be unreadable
-                # we need to ensure one of the page numbers is None
-                if first.page_number is not None and second.page_number is not None:
-                    # We don't touch the ignore flag in this case
-                    # Simply print a message as this should *never* happen
-                    log.error(_("Got a simplex document where two adjacent pages had a known page number. This should never happen as even simplex scans are converted to duplex by inserting dummy pages. Maybe you did a simplex scan but added it in duplex mode? The pages in question are %s, %i and %s, %i.") % (first.filename, first.tiff_page, second.filename, second.tiff_page))
-
-                # Set the ignored flag for the unreadable page. This is a valid
-                # operation as the back side of a readable page is known to be
-                # empty.
+                if first.page_number is None and second.page_number is None:
+                    if not failed:
+                        # Whoa, that should not happen.
+                        log.warn(_("Neither %s, %i or %s, %i has a known page number!" %
+                                 (first.filename, first.tiff_page, second.filename, second.tiff_page)))
+                        failed_pages.add(i)
+                        failed_pages.add(i + 1)
                 elif first.page_number is None:
-                    first.ignored = True
-                else:
-                    second.ignored = True
+                    # One based, odd -> +1, even -> -1
+                    first.page_number = second.page_number - 1 + 2 * (second.page_number % 2)
+                elif second.page_number is None:
+                    second.page_number = first.page_number - 1 + 2 * (first.page_number % 2)
+                elif first.page_number != (second.page_number - 1 + 2 * (second.page_number % 2)):
+                    if not failed:
+                        log.warn(_("Images %s, %i and %s, %i do not have consecutive page numbers!" %
+                                 (first.filename, first.tiff_page, second.filename, second.tiff_page)))
 
-            elif first.page_number is None:
-                # One based, odd -> +1, even -> -1
-                first.page_number = second.page_number - 1 + 2 * (second.page_number % 2)
-            elif second.page_number is None:
-                second.page_number = first.page_number - 1 + 2 * (first.page_number % 2)
-            elif first.page_number != (second.page_number - 1 + 2 * (second.page_number % 2)):
-                if not failed:
-                    log.warn(_("Images %s, %i and %s, %i do not have consecutive page numbers!" %
-                             (first.filename, first.tiff_page, second.filename, second.tiff_page)))
+                        failed_pages.add(i)
+                        failed_pages.add(i + 1)
 
-                    failed_pages.add(i)
-                    failed_pages.add(i + 1)
-
-            i += 2
+                i += 2
 
         # Check that every page has a non None value, and each page exists once.
         pages = set()
         for i, image in enumerate(self.obj.images):
-            # Ignore known blank pages
-            if image.ignored:
-                continue
-
             if image.page_number is None:
                 log.warn(_("No page number for page %s, %i exists." % (image.filename, image.tiff_page)))
                 failed_pages.add(i)
@@ -204,7 +198,7 @@ class Sheet(model.buddy.Buddy):
                              (image.filename, image.tiff_page))
                     failed_pages.add(page)
 
-            self.duplex_copy_image_attr(failed_pages, "survey_id", _("Could not read survey ID of either %s, %i or %s, %i!"))
+            self.duplex_copy_image_attr(failed_pages, "survey_id")
 
             # Simply use the survey ID from the first image globally
             self.obj.survey_id = self.obj.images[0].survey_id
@@ -237,7 +231,7 @@ class Sheet(model.buddy.Buddy):
                              (image.filename, image.tiff_page))
                     failed_pages.add(page)
 
-            self.duplex_copy_image_attr(failed_pages, "questionnaire_id", _("Could not read questionnaire ID of either %s, %i or %s, %i!"))
+            self.duplex_copy_image_attr(failed_pages, "questionnaire_id")
 
             self.obj.questionnaire_id = self.obj.images[0].questionnaire_id
 
@@ -276,13 +270,16 @@ class Sheet(model.buddy.Buddy):
         for image in self.obj.images:
             image.recognize.clean()
 
-    def duplex_copy_image_attr(self, failed_pages, attr, error_msg=None):
+    def duplex_copy_image_attr(self, failed_pages, attr):
         u"""If in duplex mode, this function will copy the given attribute
         from the image that defines it over to the one that does not.
         ie. if the attribute is None in one and differently in the other image
         it is copied.
-
+        
         """
+
+        if not self.obj.survey.defs.duplex:
+            return
 
         i = 0
         while i < len(self.obj.images):
@@ -292,14 +289,15 @@ class Sheet(model.buddy.Buddy):
             second = self.obj.images[i + 1]
 
             if getattr(first, attr) is None and getattr(second, attr) is None:
-                if error_msg is not None and not failed:
-                    log.warn(error_msg % (first.filename, first.tiff_page, second.filename, second.tiff_page))
+                # Nothing to do ...
+                pass
             elif getattr(first, attr) is None:
                 setattr(first, attr, getattr(second, attr))
             elif getattr(second, attr) is None:
                 setattr(second, attr, getattr(first, attr))
 
             i += 2
+
 
 
 class Image(model.buddy.Buddy):
@@ -312,62 +310,34 @@ class Image(model.buddy.Buddy):
         model.buddy.Buddy.__init__(self, *args)
 
         if self.obj.sheet.survey.defs.style == "classic":
-            import classic
+            import classic as style_funcs
         elif self.obj.sheet.survey.defs.style == "code128":
-            import code128
-        elif self.obj.sheet.survey.defs.style == "qr":
-            import qrcode
-        elif self.obj.sheet.survey.defs.style == "custom":
-            if not hasattr(self.obj, "style"):
-                import sys
-                log.error(_("No style buddy loaded. This needs to be done for the \"custom\" style!"))
-                sys.exit(1)
+            import code128 as style_funcs
         else:
             raise AssertionError
 
+        self.style_funcs = style_funcs
+
     def calculate_rotation(self):
-        if self.obj.ignored:
-            self.obj.rotated = None
-        else:
-            self.obj.rotated = self.obj.style.get_page_rotation()
+        self.obj.rotated = self.style_funcs.get_page_rotation(self)
 
     def calculate_page_number(self):
-        if self.obj.ignored:
-            self.obj.page_number = None
-        else:
-            self.obj.page_number = self.obj.style.get_page_number()
+        self.obj.page_number = self.style_funcs.get_page_number(self)
 
     def calculate_survey_id(self):
-        if self.obj.ignored:
-            self.obj.survey_id = None
-        else:
-            self.obj.survey_id = self.obj.style.get_survey_id()
+        self.obj.survey_id = self.style_funcs.get_survey_id(self)
 
     def calculate_questionnaire_id(self):
-        if self.obj.ignored:
-            self.obj.questionnaire_id = None
-        else:
-            self.obj.questionnaire_id = self.obj.style.get_questionnaire_id()
+        self.obj.questionnaire_id = self.style_funcs.get_questionnaire_id(self)
 
     def calculate_global_id(self):
-        if self.obj.ignored:
-            self.obj.global_id = None
-        else:
-            self.obj.global_id = self.obj.style.get_global_id()
+        self.obj.global_id = self.style_funcs.get_global_id(self)
 
     def clean(self):
         self.obj.surface.clean()
 
     def calculate_matrix(self):
-        if self.obj.ignored:
-            self.obj.matrix.set_px_to_mm(None)
-            return
-
         try:
-            # Reset matrix, so that we do not use some existing (and broken)
-            # matrix for the resolution estimation.
-            self.obj.matrix.set_px_to_mm(None)
-
             matrix = image.calculate_matrix(
                 self.obj.surface.surface,
                 self.obj.matrix.mm_to_px(),
@@ -382,8 +352,6 @@ class Image(model.buddy.Buddy):
             self.obj.matrix.set_px_to_mm(matrix)
 
     def get_coverage(self, x, y, width, height):
-        assert(not self.obj.ignored)
-
         return image.get_coverage(
             self.obj.surface.surface,
             self.matrix,
@@ -391,8 +359,6 @@ class Image(model.buddy.Buddy):
         )
 
     def get_masked_coverage(self, mask, x, y):
-        assert(not self.obj.ignored)
-
         return image.get_masked_coverage(
             self.obj.surface.surface,
             mask,
@@ -400,8 +366,6 @@ class Image(model.buddy.Buddy):
         )
 
     def get_masked_coverage_without_lines(self, mask, x, y, line_width, line_count):
-        assert(not self.obj.ignored)
-
         return image.get_masked_coverage_without_lines(
             self.obj.surface.surface,
             mask, x, y,
@@ -409,8 +373,6 @@ class Image(model.buddy.Buddy):
         )
 
     def get_masked_white_area_count(self, mask, x, y, min_size, max_size):
-        assert(not self.obj.ignored)
-
         return image.get_masked_white_area_count(
             self.obj.surface.surface,
             mask, x, y,
@@ -418,8 +380,6 @@ class Image(model.buddy.Buddy):
         )
 
     def correction_matrix_masked(self, x, y, mask):
-        assert(not self.obj.ignored)
-
         return image.calculate_correction_matrix_masked(
             self.obj.surface.surface,
             mask,
@@ -428,8 +388,6 @@ class Image(model.buddy.Buddy):
         )
 
     def find_box_corners(self, x, y, width, height):
-        assert(not self.obj.ignored)
-
         tl, tr, br, bl = image.find_box_corners(
             self.obj.surface.surface,
             self.matrix,
@@ -486,13 +444,6 @@ class Questionnaire(model.buddy.Buddy):
             for qobject in self.obj.qobjects:
                 quality = min(quality, qobject.recognize.get_quality())
             self.obj.sheet.quality = quality
-
-        # Mark the image as "recognized". It might have failed, but even if that
-        # happened, we don't want to retry all the time.
-        self.obj.sheet.recognized = True
-        # Any newly recognized sheet is definately not verified.
-        # This is relevant for reruns.
-        self.obj.sheet.verified = False
 
         # clean up
         self.obj.sheet.recognize.clean()
@@ -601,7 +552,7 @@ class Checkbox(Box):
 
             cr.scale((width - line_width) / 2.0, (height - line_width) / 2.0)
             cr.arc(0, 0, 1.0, 0, 2*math.pi)
-
+            
             # Restore old matrix (without removing the current path)
             cr.restore()
         else:
@@ -622,7 +573,7 @@ class Checkbox(Box):
 
             cr.scale((width - 3*line_width) / 2.0, (height - 3*line_width) / 2.0)
             cr.arc(0, 0, 1.0, 0, 2*math.pi)
-
+            
             # Restore old matrix (without removing the current path)
             cr.restore()
         else:
@@ -634,7 +585,7 @@ class Checkbox(Box):
         del cr
 
         return surf, xoff, yoff
-
+        
 
     def recognize(self):
         img = self.obj.sheet.get_page_image(self.obj.page_number)
@@ -645,15 +596,10 @@ class Checkbox(Box):
 
         surf, xoff, yoff = self.get_outline_mask()
 
-        matrix, covered = img.recognize.correction_matrix_masked(
+        matrix = img.recognize.correction_matrix_masked(
             self.obj.x, self.obj.y,
             surf
         )
-        # Calculate some sort of quality for the checkbox position
-        if covered < defs.image_line_coverage:
-            pos_quality = 0
-        else:
-            pos_quality = min(covered + 0.2, 1)
 
         x, y = matrix.transform_point(self.obj.x, self.obj.y)
         width, height = matrix.transform_distance(self.obj.width, self.obj.height)
@@ -693,22 +639,19 @@ class Checkbox(Box):
         quality = -1
         # Iterate the ranges
         for metric, value in self.obj.data.metrics.iteritems():
-            metric = defs.checkbox_metrics[self.obj.sheet.survey.defs.checkmode][metric]
+            metric = defs.checkbox_metrics[metric]
 
             for lower, upper in zip(metric[:-1], metric[1:]):
-                if value >= lower[0] and value <= upper[0]:
+                if value >= lower[0] and value < upper[0]:
                     # Interpolate quality value
-                    if lower[0] != upper[0]:
-                        metric_quality = lower[2] + (upper[2] - lower[2]) * (value - lower[0]) / (upper[0] - lower[0])
-                    else:
-                        metric_quality = lower[2]
+                    metric_quality = lower[2] + (upper[2] - lower[2]) * (value - lower[0]) / (upper[0] - lower[0])
 
                     if metric_quality > quality:
                         state = lower[1]
                         quality = metric_quality
 
         self.obj.data.state = state
-        self.obj.data.quality = min(quality, pos_quality)
+        self.obj.data.quality = quality
 
 
 class Textbox(Box):
@@ -904,3 +847,4 @@ class Textbox(Box):
             self.obj.data.y = self.obj.y
             self.obj.data.width = self.obj.width
             self.obj.data.height = self.obj.height
+

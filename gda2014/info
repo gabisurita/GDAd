@@ -1,0 +1,22 @@
+[sdaps]
+title = Question\'ario do Estudante
+global_id = 
+
+[info]
+Per\IeC {\'\i }odo = 2s2014
+Author = GDA - Grupo Discente de Avaliação
+
+[defs]
+# These values are not read back, they exist for information only!
+paper_width = 210.0
+paper_height = 297.0
+print_questionnaire_id = False
+print_survey_id = True
+style = code128
+duplex = True
+
+[questionnaire]
+# These values are not read back, they exist for information only!
+page_count = 2
+survey_id = 1842554140
+

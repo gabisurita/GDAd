@@ -37,9 +37,6 @@ disable_libtiff_warnings (void);
 cairo_surface_t*
 get_a1_from_tiff (const char *filename, gint page, gboolean rotated);
 
-gboolean
-write_a1_to_tiff (const char *filename, cairo_surface_t *surf);
-
 cairo_surface_t*
 get_rgb24_from_tiff (const char *filename, gint page, gboolean rotated);
 
@@ -52,14 +49,11 @@ get_tiff_resolution (const char *filename, gint page, gdouble *xresolution, gdou
 gboolean
 check_tiff_monochrome (const char *filename);
 
-gboolean
-find_corner_marker(cairo_surface_t *surface, cairo_matrix_t *matrix, gint corner, gdouble *marker_x, gdouble *marker_y);
-
 cairo_matrix_t*
 calculate_matrix(cairo_surface_t *surface, cairo_matrix_t *matrix, gdouble mm_x, gdouble mm_y, gdouble mm_width, gdouble mm_height);
 
 cairo_matrix_t*
-calculate_correction_matrix_masked(cairo_surface_t *surface, cairo_surface_t *mask, cairo_matrix_t *matrix, gdouble mm_x, gdouble mm_y, gdouble *covered);
+calculate_correction_matrix_masked(cairo_surface_t *surface, cairo_surface_t *mask, cairo_matrix_t *matrix, gdouble mm_x, gdouble mm_y);
 
 gboolean
 find_box_corners(cairo_surface_t *surface, cairo_matrix_t *matrix, gdouble mm_x, gdouble mm_y, gdouble mm_width, gdouble mm_height,

@@ -16,13 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from sdaps import template
+from sdaps import model
+from sdaps import script
 
-from sdaps.utils.ugettext import ugettext, ungettext
+from sdaps.ugettext import ugettext, ungettext
 _ = ugettext
 
 
-def cover(survey, output=None):
+parser = script.subparsers.add_parser("cover",
+    help=_("Create a cover for the questionnaires."),
+    description=_("""This command creates a cover page for questionnaires. All
+    the metadata of the survey will be printed on the page."""))
+parser.add_argument('-o', '--output',
+    help=_("Filename to store the data to (default: cover_%%i.pdf)"))
+
+@script.connect(parser)
+@script.logfile
+def cover(cmdline):
+    from sdaps import template
+
+    survey = model.survey.Survey.load(cmdline['project'])
 
     story = template.story_title(survey)
     subject = []
@@ -30,8 +43,8 @@ def cover(survey, output=None):
         subject.append(u'%(key)s: %(value)s' % {'key': key, 'value': value})
     subject = u'\n'.join(subject)
 
-    if output:
-        filename = output
+    if cmdline['output']:
+        filename = cmdline['output']
     else:
         filename = survey.new_path('cover_%i.pdf')
 

@@ -62,35 +62,35 @@ def init(local_run_value, package_path):
             base_dir,
             'build',
             'mo'))
-
         # Initialize build_dir
         build_dir = os.path.join(base_dir, 'build', 'share', 'sdaps')
-
         # Initialize build_dir
         lib_build_dir = os.path.join(
             base_dir,
             'build', 'lib.%s-%s' % (get_build_platform(), get_python_version()),
             'sdaps')
     else:
-        # Look for the data in the parent directories
+        # Initialize prefix
+        # Gehe von base_dir aus solange nach oben, bis path/share/sdaps
+        # existiert
         path = base_dir
         while True:
+            new_path = os.path.split(path)[0]
+            assert not path == new_path # Wir wären oben angekommen
+            path = new_path
             if os.path.exists(os.path.join(path, 'share', 'sdaps')):
                 prefix = path
                 break
-            new_path = os.path.split(path)[0]
-            assert not path == new_path, "could not find locales" # Wir wären oben angekommen
-            path = new_path
-
         # Initialize gettext
         init_gettext(os.path.join(prefix, 'share', 'locale'))
 
 
 def init_gettext(locale_dir):
-    u'''Initialize gettext using the given directory containing the l10n data.
+    u'''Initialize gettext.
+
+    Tell it, where to find the translation files.
     '''
     gettext.bindtextdomain('sdaps', locale_dir)
-
     if hasattr(gettext, 'bind_textdomain_codeset'):
         gettext.bind_textdomain_codeset('sdaps', 'UTF-8')
         gettext.textdomain('sdaps')
@@ -98,4 +98,3 @@ def init_gettext(locale_dir):
         locale.bindtextdomain('sdaps', locale_dir)
         locale.bind_textdomain_codeset('sdaps', 'UTF-8')
         locale.textdomain('sdaps')
-

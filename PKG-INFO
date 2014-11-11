@@ -1,0 +1,14 @@
+Metadata-Version: 1.0
+Name: sdaps
+Version: 1.0.5
+Summary: Scripts for data acquisition with paper-based surveys
+Home-page: http://sdaps.sipsolutions.net
+Author: Benjamin Berg, Christoph Simon
+Author-email: benjamin@sipsolutions.net, post@christoph-simon.eu
+License: GPL-3
+Description: 
+        SDAPS is a tool to carry out paper based surveys. You can create machine
+        readable questionnaires using LibreOffice and LaTeX. It also provides
+        the tools to later analyse the scanned data, and create a report.
+        
+Platform: UNKNOWN

@@ -37,7 +37,7 @@ import script
 import os
 import argparse
 
-from utils.ugettext import ugettext, ungettext
+from ugettext import ugettext, ungettext
 _ = ugettext
 
 
@@ -49,10 +49,21 @@ def main(local_run=False):
     the command line and passes control over to the selected function."""
     init(local_run)
 
-    import log
-    log.activate_redirects()
-
-    import cmdline
+    import add
+    import annotate
+    import boxgallery
+    import cover
+    import csvdata
+    import gui
+    import ids
+    import info
+    import recognize
+    import reorder
+    import report
+    import reporttex
+    import setup
+    import setuptex
+    import stamp
 
     cmdline = script.parser.parse_args()
     cmdline = vars(cmdline)

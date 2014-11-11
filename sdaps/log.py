@@ -29,7 +29,7 @@ import sys
 import time
 import StringIO
 
-from sdaps.utils.ugettext import ugettext, ungettext
+from sdaps.ugettext import ugettext, ungettext
 _ = ugettext
 
 
@@ -109,9 +109,6 @@ class Encoder(object):
     def flush(self):
         self.pipe.flush()
 
-    def fileno(self):
-        self.pipe.fileno()
-
 class Logfile(object):
 
     def __init__(self):
@@ -121,7 +118,7 @@ class Logfile(object):
         self.logfile.write(data)
 
     def open(self, filename):
-        logfile = Encoder(file(filename, 'a', buffering=0))
+        logfile = Encoder(file(filename, 'a'))
         logfile.write(self.logfile.getvalue())
         self.logfile = logfile
 
@@ -134,9 +131,6 @@ class Logfile(object):
 
     def flush(self):
         self.logfile.flush()
-
-    def fileno(self):
-        return self.logfile.fileno()
 
 class ProgressBar(object):
 
@@ -182,18 +176,10 @@ class ProgressBar(object):
 progressbar = ProgressBar(sys.stdout)
 logfile = Logfile()
 
-redirects_activated = False
-def activate_redirects():
-    global redirects_activated
-
-    if redirects_activated is not False:
-        return
-    redirects_activated = True
-
-    sys.stdout = Encoder(sys.stdout)
-    sys.stderr = Encoder(sys.stderr)
-    sys.stdout = Wiper(sys.stdout, progressbar)
-    sys.stderr = Wiper(sys.stderr, progressbar)
-    sys.stdout = Copier(sys.stdout, logfile)
-    sys.stderr = Copier(sys.stderr, logfile)
+sys.stdout = Encoder(sys.stdout)
+sys.stderr = Encoder(sys.stderr)
+sys.stdout = Wiper(sys.stdout, progressbar)
+sys.stderr = Wiper(sys.stderr, progressbar)
+sys.stdout = Copier(sys.stdout, logfile)
+sys.stderr = Copier(sys.stderr, logfile)
 

@@ -27,13 +27,39 @@ from sdaps import image
 
 from sdaps import calculate
 
-from sdaps.utils.latex import raw_unicode_to_latex, unicode_to_latex
-
-from sdaps.utils.image import ImageWriter
+img_counter = 0
 
 
-def format_raw_text(text):
-    from sdaps.setuptex import latexmap
+def output_image(box, tmpdir):
+    global img_counter
+    img = box.sheet.get_page_image(box.question.page_number)
+
+    filename = box.question.questionnaire.survey.path(img.filename)
+
+    mm_to_px = img.matrix.mm_to_px()
+    x0, y0 = mm_to_px.transform_point(box.data.x, box.data.y)
+    x1, y1 = mm_to_px.transform_point(box.data.x + box.data.width, box.data.y)
+    x2, y2 = mm_to_px.transform_point(box.data.x, box.data.y + box.data.height)
+    x3, y3 = mm_to_px.transform_point(box.data.x + box.data.width, box.data.y + box.data.height)
+
+    x = int(min(x0, x1, x2, x3))
+    y = int(min(y0, y1, y2, y3))
+    width = int(math.ceil(max(x0, x1, x2, x3) - x))
+    height = int(math.ceil(max(y0, y1, y2, y3) - y))
+
+    img = image.get_a1_from_tiff(filename, img.tiff_page, img.rotated if img.rotated else False)
+    output = cairo.ImageSurface(cairo.FORMAT_RGB24, width, height)
+    cr = cairo.Context(output)
+    cr.set_source_rgb(1, 1, 1)
+    cr.paint()
+
+    cr.set_source_surface(img, -x, -y)
+    cr.paint()
+
+    img_counter += 1
+    output.write_to_png(os.path.join(tmpdir, 'image-%i.png' % img_counter))
+    return 'image-%i.png' % img_counter
+
 
 class Questionnaire(model.buddy.Buddy):
 
@@ -41,14 +67,11 @@ class Questionnaire(model.buddy.Buddy):
     name = 'report'
     obj_class = model.questionnaire.Questionnaire
 
-    def init(self, img_dir, small=0, suppress=None):
+    def init(self, small=0):
         self.small = small
-
-        self.textbox_writer = ImageWriter(img_dir, 'textbox-')
-
         # iterate over qobjects
         for qobject in self.obj.qobjects:
-            qobject.report.init(small, suppress)
+            qobject.report.init(small)
 
     def report(self, tmpdir):
         # iterate over qobjects
@@ -74,7 +97,7 @@ class QObject(model.buddy.Buddy):
     name = 'report'
     obj_class = model.questionnaire.QObject
 
-    def init(self, small, suppress):
+    def init(self, small):
         self.small = small
 
     def report(self, tmpdir):
@@ -95,7 +118,7 @@ class Head(QObject):
 
     def write(self, out, tmpdir):
         # Smarter numbering handling?
-        out.write('\\section*{%s %s}\n' % (self.obj.id_str(), unicode_to_latex(self.obj.title)))
+        out.write('\\section*{%s %s}\n' % (self.obj.id_str(), self.obj.title))
 
 
 class Question(QObject):
@@ -106,7 +129,7 @@ class Question(QObject):
 
     def write_begin(self, out):
         # Smarter numbering handling?
-        out.write('\\begin{question}{%s %s}\n' % (self.obj.id_str(), unicode_to_latex(self.obj.question)))
+        out.write('\\begin{question}{%s %s}\n' % (self.obj.id_str(), self.obj.question))
 
     def write_end(self, out):
         # Smarter numbering handling?
@@ -123,9 +146,8 @@ class Choice(Question):
     name = 'report'
     obj_class = model.questionnaire.Choice
 
-    def init(self, small, suppress):
+    def init(self, small):
         self.small = small
-        self.suppress = suppress
         self.text = ""
 
     def report(self, tmpdir):
@@ -133,16 +155,12 @@ class Choice(Question):
             for box in self.obj.boxes:
                 if (isinstance(box, model.questionnaire.Textbox) and
                         box.data.state):
-                    if box.data.text and self.suppress != 'substitutions':
-                        text = raw_unicode_to_latex(box.data.text)
-                        self.text += '\\freeformtext{%s}\n' % (text)
-                    elif self.suppress != 'images':
-                        img_file = self.obj.questionnaire.report.textbox_writer.output_box(box)
-                        self.text += '\\freeform{%fmm}{%s}\n' % (box.data.width, img_file)
+                    img_file = output_image(box, tmpdir)
+                    self.text += '\\freeform{%fmm}{%s}\n' % (box.data.width, img_file)
 
     def write_begin(self, out):
         # Smarter numbering handling?
-        out.write('\\begin{choicequestion}{%s %s}\n' % (self.obj.id_str(), unicode_to_latex(self.obj.question)))
+        out.write('\\begin{choicequestion}{%s %s}\n' % (self.obj.id_str(), self.obj.question))
 
     def write_end(self, out):
         # Smarter numbering handling?
@@ -152,7 +170,7 @@ class Choice(Question):
         self.write_begin(out)
         if self.obj.calculate.count:
             for box in self.obj.boxes:
-                out.write('''\\choiceanswer{%s}{%.3f}\n''' % (unicode_to_latex(box.text), self.obj.calculate.values[box.value]))
+                out.write('''\\choiceanswer{%s}{%f}\n''' % (box.text, self.obj.calculate.values[box.value]))
         self.write_end(out)
 
         out.write(self.text)
@@ -172,20 +190,19 @@ class Mark(Question):
         Question.write_begin(self, out)
 
         if self.obj.calculate.count:
-            out.write('\\pgfkeyssetvalue{/sdaps/mark/range}{%s}\n' % (len(self.obj.boxes)))
-            out.write('\\pgfkeyssetvalue{/sdaps/mark/lower}{%s}\n' % (unicode_to_latex(self.obj.answers[0])))
-            out.write('\\pgfkeyssetvalue{/sdaps/mark/upper}{%s}\n' % (unicode_to_latex(self.obj.answers[1])))
+            out.write('\\pgfkeyssetvalue{/sdaps/mark/lower}{%s}\n' % (self.obj.answers[0]))
+            out.write('\\pgfkeyssetvalue{/sdaps/mark/upper}{%s}\n' % (self.obj.answers[1]))
             out.write('\\pgfkeyssetvalue{/sdaps/mark/count}{%i}\n' % (self.obj.calculate.count))
-            out.write('\\pgfkeyssetvalue{/sdaps/mark/stddev}{%.1f}\n' % (self.obj.calculate.standard_deviation))
+            out.write('\\pgfkeyssetvalue{/sdaps/mark/stddev}{%f}\n' % (self.obj.calculate.standard_derivation))
             for i, fraction in sorted(self.obj.calculate.values.iteritems()):
-                out.write('\\pgfkeyssetvalue{/sdaps/mark/%i/fraction}{%.3f}\n' % (i, fraction))
-            out.write('\\pgfkeyssetvalue{/sdaps/mark/mean}{%.1f}\n' % (self.obj.calculate.mean))
+                out.write('\\pgfkeyssetvalue{/sdaps/mark/%i/fraction}{%f}\n' % (i, fraction))
+            out.write('\\pgfkeyssetvalue{/sdaps/mark/mean}{%f}\n' % (self.obj.calculate.mean))
             out.write('\n\\markanswer\n')
 
         Question.write_end(self, out)
 
     def filters(self):
-        for x in range(len(self.obj.boxes)+1):
+        for x in range(6):
             yield u'%i == %s' % (x, self.obj.id_filter())
 
 
@@ -195,21 +212,16 @@ class Text(Question):
     name = 'report'
     obj_class = model.questionnaire.Text
 
-    def init(self, small, suppress):
+    def init(self, small):
         self.small = small
-        self.suppress = suppress
         self.text = ""
 
     def report(self, tmpdir):
         if not self.small:
             for box in self.obj.boxes:
                 if box.data.state:
-                    if box.data.text and self.suppress != 'substitutions':
-                        text = raw_unicode_to_latex(box.data.text)
-                        self.text += '\\freeformtext{%s}\n' % (text)
-                    elif self.suppress != 'images':
-                        img_file = self.obj.questionnaire.report.textbox_writer.output_box(box)
-                        self.text += '\\freeform{%fmm}{%s}\n' % (box.data.width, img_file)
+                    img_file = output_image(box, tmpdir)
+                    self.text += '\\freeform{%fmm}{%s}\n' % (box.data.width, img_file)
 
     def write(self, out, tmpdir):
         Question.write_begin(self, out)
@@ -230,8 +242,8 @@ class Additional_FilterHistogram(Question):
 
         if self.obj.calculate.count:
             for i in range(len(self.obj.calculate.values)):
-                out.write('''\\choiceanswer{%s}{%.3f}{%.3f}\n''' %
-                          (unicode_to_latex(self.obj.answers[i]), self.obj.calculate.values[i], self.obj.calculate.significant[i]))
+                out.write('''\\choiceanswer{%s}{%f}{%f}\n''' %
+                          (self.obj.answers[i], self.obj.calculate.values[i], self.obj.calculate.significant[i]))
 
         Question.write_end(self, out)
 

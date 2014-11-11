@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import StringIO
-from PIL import Image
+import Image
 
 from reportlab import pdfgen
 from reportlab import platypus
@@ -32,7 +32,7 @@ from sdaps import template
 from sdaps import model
 from sdaps import image
 
-from sdaps.utils.ugettext import ugettext, ungettext
+from sdaps.ugettext import ugettext, ungettext
 _ = ugettext
 
 import flowables
@@ -145,7 +145,7 @@ class Mark(platypus.Flowable):
     -----
     skala with mean        self.skala_height
     -----
-    marks(1 - range)        self.marks_height
+    marks(1 - 5)        self.marks_height
     -----
     '''
 
@@ -153,12 +153,12 @@ class Mark(platypus.Flowable):
     top_margin = 0
     left_margin = 12
 
-    def __init__(self, values, answers, mean, standard_deviation, count, significant=0):
+    def __init__(self, values, answers, mean, standard_derivation, count, significant=0):
         platypus.Flowable.__init__(self)
 
         self.values = values
         self.mean = mean
-        self.standard_deviation = standard_deviation
+        self.standard_derivation = standard_derivation
         self.count = count
 
         self.box_width = 40
@@ -186,7 +186,7 @@ class Mark(platypus.Flowable):
         self.mean_paragraph = \
             platypus.Paragraph(_(u'Mean: %.2f') % self.mean, stylesheet['Normal'])
         self.stdd_paragraph = \
-            platypus.Paragraph(_(u'Standard Deviation: %.2f') % self.standard_deviation, stylesheet['Normal'])
+            platypus.Paragraph(_(u'Standard Deviation: %.2f') % self.standard_derivation, stylesheet['Normal'])
 
     def wrap(self, available_width, available_height):
         self.answers_paragraph.wrap(available_width, available_height)
@@ -194,7 +194,7 @@ class Mark(platypus.Flowable):
         self.mean_paragraph.wrap(available_width, available_height)
         self.stdd_paragraph.wrap(available_width, available_height)
         self.width = available_width # self.box_width * 5
-        self.offset = self.width - self.box_width * len(self.values) - self.margin
+        self.offset = self.width - self.box_width * 5 - self.margin
         self.height = self.top_margin + self.values_height + self.values_gap + \
                       self.bars_height + self.skala_height + self.marks_height
         return self.width, self.height
@@ -227,7 +227,7 @@ class Mark(platypus.Flowable):
             box.drawOn(self.canv,
                        self.offset + i * self.box_width, self.marks_height + self.skala_height)
         # skala
-        for i in range( (len(self.values) - 1) * 10 + 1):
+        for i in range(41):
             if i % 10 == 0:
                 self.canv.setLineWidth(0.2)
                 self.canv.line(
@@ -253,7 +253,7 @@ class Mark(platypus.Flowable):
             if i % 10 == 0:
                 self.canv.setLineWidth(0.1)
         # marks
-        for i in range(1, len(self.values)+1):
+        for i in range(1, 6):
             self.canv.drawCentredString(
                 self.offset + (i - 0.5) * self.box_width, 0,
                 '%i' % i
@@ -268,7 +268,7 @@ class Mark(platypus.Flowable):
         self.stdd_paragraph.drawOn(self.canv, self.left_margin, y_pos - 51)
 
 
-class Freeform(platypus.Flowable):
+class Text(platypus.Flowable):
 
     cache = dict()
 
@@ -316,18 +316,4 @@ class Freeform(platypus.Flowable):
         self.canv.setStrokeColorRGB(0.6, 0.6, 0.6)
         self.canv.line(0, 0, self.available_width, 0)
         self.canv.line(0, self.height, self.available_width, self.height)
-
-
-class RawText(platypus.Paragraph):
-
-    def __init__(self, text, *args, **kwargs):
-
-        # Replace things like 
-
-        text = escape(text)
-        text = text.replace('\n', u'<br/>')
-
-        text = text
-
-        platypus.Paragraph.__init__(self, text, *args, bulletText=u'&bull;', **kwargs)
 

@@ -1,0 +1,200 @@
+------------------------------------------------------------------------------
+- SDAPS -- setup_tex
+------------------------------------------------------------------------------
+Running pdflatex now twice to generate the questionnaire.
+Running pdflatex now twice to generate the questionnaire.
+Question\'ario do Estudante
+Per\IeC {\'\i }odo: 2s2014
+Author: GDA - Grupo Discente de Avaliação
+Questionnaire
+1(Head) C\'odigo da disciplina
+1.1(Choice) Sigla {1}
+	0(Checkbox)  15.1  85.9   3.5   3.5 EA
+	1(Checkbox)  34.8  85.9   3.5   3.5 EE
+	2(Checkbox)  54.4  85.9   3.5   3.5 ET
+1.2(Head) N\'umero
+1.2.1(Choice) x {1}
+	0(Checkbox)  86.9  76.8   3.5   3.5 0
+	1(Checkbox)  95.9  76.8   3.5   3.5 1
+	2(Checkbox) 104.9  76.8   3.5   3.5 2
+	3(Checkbox) 113.9  76.8   3.5   3.5 3
+	4(Checkbox) 122.9  76.8   3.5   3.5 4
+	5(Checkbox) 131.9  76.8   3.5   3.5 5
+	6(Checkbox) 140.9  76.8   3.5   3.5 6
+	7(Checkbox) 149.9  76.8   3.5   3.5 7
+	8(Checkbox) 158.9  76.8   3.5   3.5 8
+	9(Checkbox) 167.9  76.8   3.5   3.5 9
+1.2.2(Choice) y {1}
+	0(Checkbox)  86.9  81.6   3.5   3.5 0
+	1(Checkbox)  95.9  81.6   3.5   3.5 1
+	2(Checkbox) 104.9  81.6   3.5   3.5 2
+	3(Checkbox) 113.9  81.6   3.5   3.5 3
+	4(Checkbox) 122.9  81.6   3.5   3.5 4
+	5(Checkbox) 131.9  81.6   3.5   3.5 5
+	6(Checkbox) 140.9  81.6   3.5   3.5 6
+	7(Checkbox) 149.9  81.6   3.5   3.5 7
+	8(Checkbox) 158.9  81.6   3.5   3.5 8
+	9(Checkbox) 167.9  81.6   3.5   3.5 9
+1.2.3(Choice) z {1}
+	0(Checkbox)  86.9  86.4   3.5   3.5 0
+	1(Checkbox)  95.9  86.4   3.5   3.5 1
+	2(Checkbox) 104.9  86.4   3.5   3.5 2
+	3(Checkbox) 113.9  86.4   3.5   3.5 3
+	4(Checkbox) 122.9  86.4   3.5   3.5 4
+	5(Checkbox) 131.9  86.4   3.5   3.5 5
+	6(Checkbox) 140.9  86.4   3.5   3.5 6
+	7(Checkbox) 149.9  86.4   3.5   3.5 7
+	8(Checkbox) 158.9  86.4   3.5   3.5 8
+	9(Checkbox) 167.9  86.4   3.5   3.5 9
+2(Head) Sobre a Disciplina
+2.1(Head) Classifique a disciplina cursada, dentre as demais disciplinas do curso, perante os seguintes temas:
+2.1.1(Mark) Importância para o curso {1}
+	Nenhuma - Muita
+	0(Checkbox) 140.3 113.7   3.5   3.5 
+	1(Checkbox) 148.0 113.7   3.5   3.5 
+	2(Checkbox) 155.7 113.7   3.5   3.5 
+	3(Checkbox) 163.5 113.7   3.5   3.5 
+	4(Checkbox) 171.2 113.7   3.5   3.5 
+2.1.2(Mark) Estrutura da disciplina (ementa) {1}
+	Ruim - Excelente
+	0(Checkbox) 140.3 118.5   3.5   3.5 
+	1(Checkbox) 148.0 118.5   3.5   3.5 
+	2(Checkbox) 155.7 118.5   3.5   3.5 
+	3(Checkbox) 163.5 118.5   3.5   3.5 
+	4(Checkbox) 171.2 118.5   3.5   3.5 
+2.1.3(Mark) Dificuldade {1}
+	F\'acil - Dif\'\i cil
+	0(Checkbox) 140.3 123.3   3.5   3.5 
+	1(Checkbox) 148.0 123.3   3.5   3.5 
+	2(Checkbox) 155.7 123.3   3.5   3.5 
+	3(Checkbox) 163.5 123.3   3.5   3.5 
+	4(Checkbox) 171.2 123.3   3.5   3.5 
+2.2(Choice) Tempo de dedicação extraclasse (por semana): {1}
+	0(Checkbox)  15.1 137.7   3.5   3.5 0h \`a 1h
+	1(Checkbox)  45.8 137.7   3.5   3.5 1h \`a 2h
+	2(Checkbox)  76.4 137.7   3.5   3.5 2h \`a 4h
+	3(Checkbox) 107.1 137.7   3.5   3.5 4h \`a 6h
+	4(Checkbox) 137.8 137.7   3.5   3.5 6h \`a 8h
+	5(Checkbox) 168.4 137.7   3.5   3.5 8h+
+2.3(Text) Enumere os pontos mais importantes que aprendeu nesta disciplina: {1}
+	0(Textbox )  13.0 151.2 184.0  21.1 
+2.4(Text) Recomende materiais (livros, apostilas, sites): {1}
+	0(Textbox )  13.0 182.4 184.0  21.1 
+2.5(Text) Cite dicas para quem for cursar a disciplina: {1}
+	0(Textbox )  13.0 213.6 184.0  21.1 
+2.6(Head) Classifique, quando pertinente, os demais t\'opicos a seguir:
+2.6.1(Mark) Importância da monitoria para o curso {1}
+	Nenhuma - Muita
+	0(Checkbox) 146.2 250.2   3.5   3.5 
+	1(Checkbox) 153.9 250.2   3.5   3.5 
+	2(Checkbox) 161.6 250.2   3.5   3.5 
+	3(Checkbox) 169.4 250.2   3.5   3.5 
+	4(Checkbox) 177.1 250.2   3.5   3.5 
+2.6.2(Mark) Conhecimento e did\'atica do auxiliar did\'atico {1}
+	Nenhum - Total
+	0(Checkbox) 146.2 255.0   3.5   3.5 
+	1(Checkbox) 153.9 255.0   3.5   3.5 
+	2(Checkbox) 161.6 255.0   3.5   3.5 
+	3(Checkbox) 169.4 255.0   3.5   3.5 
+	4(Checkbox) 177.1 255.0   3.5   3.5 
+2.6.3(Mark) Disponibilidade de equipamentos {1}
+	Nenhuma - Total
+	0(Checkbox) 146.2 264.6   3.5   3.5 
+	1(Checkbox) 153.9 264.6   3.5   3.5 
+	2(Checkbox) 161.6 264.6   3.5   3.5 
+	3(Checkbox) 169.4 264.6   3.5   3.5 
+	4(Checkbox) 177.1 264.6   3.5   3.5 
+2.6.4(Mark) Qualidade dos equipamentos {1}
+	Nenhuma - Total
+	0(Checkbox) 146.2 269.4   3.5   3.5 
+	1(Checkbox) 153.9 269.4   3.5   3.5 
+	2(Checkbox) 161.6 269.4   3.5   3.5 
+	3(Checkbox) 169.4 269.4   3.5   3.5 
+	4(Checkbox) 177.1 269.4   3.5   3.5 
+3(Head) Sobre o Docente
+3.1(Head) Classifique o docente perante os temas:
+3.1.1(Mark) Clareza e did\'atica {2}
+	Ruim - Excelente
+	0(Checkbox) 140.3  42.7   3.5   3.5 
+	1(Checkbox) 148.0  42.7   3.5   3.5 
+	2(Checkbox) 155.7  42.7   3.5   3.5 
+	3(Checkbox) 163.5  42.7   3.5   3.5 
+	4(Checkbox) 171.2  42.7   3.5   3.5 
+3.1.2(Mark) Interesse pelas aulas {2}
+	Nenhum - Total
+	0(Checkbox) 140.3  47.5   3.5   3.5 
+	1(Checkbox) 148.0  47.5   3.5   3.5 
+	2(Checkbox) 155.7  47.5   3.5   3.5 
+	3(Checkbox) 163.5  47.5   3.5   3.5 
+	4(Checkbox) 171.2  47.5   3.5   3.5 
+3.1.3(Mark) Relacionamento com estudantes {2}
+	Ruim - Excelente
+	0(Checkbox) 140.3  52.3   3.5   3.5 
+	1(Checkbox) 148.0  52.3   3.5   3.5 
+	2(Checkbox) 155.7  52.3   3.5   3.5 
+	3(Checkbox) 163.5  52.3   3.5   3.5 
+	4(Checkbox) 171.2  52.3   3.5   3.5 
+3.1.4(Mark) Incentivo \`a participação {2}
+	Nenhum - Total
+	0(Checkbox) 140.3  57.0   3.5   3.5 
+	1(Checkbox) 148.0  57.0   3.5   3.5 
+	2(Checkbox) 155.7  57.0   3.5   3.5 
+	3(Checkbox) 163.5  57.0   3.5   3.5 
+	4(Checkbox) 171.2  57.0   3.5   3.5 
+3.1.5(Mark) Coerência nas avaliações {2}
+	Nenhuma - Total
+	0(Checkbox) 140.3  61.8   3.5   3.5 
+	1(Checkbox) 148.0  61.8   3.5   3.5 
+	2(Checkbox) 155.7  61.8   3.5   3.5 
+	3(Checkbox) 163.5  61.8   3.5   3.5 
+	4(Checkbox) 171.2  61.8   3.5   3.5 
+3.2(Head) Responda com respeito a atividade do docente nesta disciplina:
+3.2.1(Mark) Dom\'\i nio da mat\'eria {2}
+	Nenhum - Total
+	0(Checkbox) 140.3  76.2   3.5   3.5 
+	1(Checkbox) 148.0  76.2   3.5   3.5 
+	2(Checkbox) 155.7  76.2   3.5   3.5 
+	3(Checkbox) 163.5  76.2   3.5   3.5 
+	4(Checkbox) 171.2  76.2   3.5   3.5 
+3.2.2(Mark) Capacidade de prender a atenção {2}
+	Ruim - Excelente
+	0(Checkbox) 140.3  81.0   3.5   3.5 
+	1(Checkbox) 148.0  81.0   3.5   3.5 
+	2(Checkbox) 155.7  81.0   3.5   3.5 
+	3(Checkbox) 163.5  81.0   3.5   3.5 
+	4(Checkbox) 171.2  81.0   3.5   3.5 
+3.2.3(Mark) Importância da aula para o aprendizado {2}
+	Nenhuma - Total
+	0(Checkbox) 140.3  85.8   3.5   3.5 
+	1(Checkbox) 148.0  85.8   3.5   3.5 
+	2(Checkbox) 155.7  85.8   3.5   3.5 
+	3(Checkbox) 163.5  85.8   3.5   3.5 
+	4(Checkbox) 171.2  85.8   3.5   3.5 
+3.2.4(Mark) Relacionamento dos conceitos com atividades pr\'aticas {2}
+	Nenhum - Total
+	0(Checkbox) 140.3  90.6   3.5   3.5 
+	1(Checkbox) 148.0  90.6   3.5   3.5 
+	2(Checkbox) 155.7  90.6   3.5   3.5 
+	3(Checkbox) 163.5  90.6   3.5   3.5 
+	4(Checkbox) 171.2  90.6   3.5   3.5 
+3.3(Mark) A dificuldade apontada \'e inerente a disciplina ou devido ao docente? {2}
+	Inerente a disciplina - Devido ao docente
+	0(Checkbox)  87.8 105.0   3.5   3.5 
+	1(Checkbox)  95.5 105.0   3.5   3.5 
+	2(Checkbox) 103.3 105.0   3.5   3.5 
+	3(Checkbox) 111.0 105.0   3.5   3.5 
+	4(Checkbox) 118.7 105.0   3.5   3.5 
+3.4(Text) Cite qualidades positivas do docente: {2}
+	0(Textbox )  13.0 118.5 184.0  16.7 
+3.5(Text) Aponte, para o docente, pontos a melhorar: {2}
+	0(Textbox )  13.0 145.3 184.0  16.7 
+3.6(Text) Cite dicas para quem for fazer uma disciplina com este docente: {2}
+	0(Textbox )  13.0 172.1 184.0  16.7 
+3.7(Choice) Você faria outra disciplina com este docente? {2}
+	0(Checkbox)  15.1 199.5   3.5   3.5 Sim, com certeza
+	1(Checkbox)  76.4 199.5   3.5   3.5 Talvez, se fosse necess\'ario
+	2(Checkbox) 137.8 199.5   3.5   3.5 Não, em hip\'otese alguma
+4(Head) Coment\'arios adicionais
+4.1(Text) Use este espaço para quaisquer coment\'arios adicionais ou para completar qualquer uma das questões. Suas considerações são fundamentais para novas propostas de melhoria no curso. Coment\'arios sobre o GDA ou sobre este fomul\'ario tamb\'em são bem vindos. {2}
+	0(Textbox )  13.0 234.4 184.0  36.8 
+

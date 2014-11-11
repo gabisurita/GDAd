@@ -16,38 +16,49 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import csv
+u"""
+This module implements a simple export/import to/from CSV files.
+"""
 
-from sdaps import clifilter
 from sdaps import model
+from sdaps import script
 
-from . import buddies
-
-
-def csvdata_export(survey, filename, filter=None, export_images=False):
-    # compile clifilter
-    filter = clifilter.clifilter(survey, filter)
-
-    # export
-    survey.questionnaire.csvdata.open_csv(filename, export_images)
-
-    survey.iterate(
-        survey.questionnaire.csvdata.export_data,
-        filter,
-    )
-
-    survey.questionnaire.csvdata.export_finish()
+from sdaps.ugettext import ugettext, ungettext
+_ = ugettext
 
 
-def csvdata_import(survey, filename):
-    csvfile = file(filename, 'r')
-    csvreader = csv.DictReader(csvfile)
+parser = script.subparsers.add_parser("csv",
+    help=_("Import or export data to/from CSV files."),
+    description=_("""Import or export data to/from a CSV file. The first line
+    is a header which defines questionnaire_id and global_id, and a column
+    for each checkbox and textfield. Note that the import is currently very
+    limited, as you need to specifiy the questionnaire ID to select the sheet
+    which should be updated."""))
 
-    for data in csvreader:
-        survey.questionnaire.csvdata.import_data(data)
+subparser = parser.add_subparsers()
 
-    csvfile.close()
+export = subparser.add_parser('export',
+    help=_("Export data to CSV file."))
+export.add_argument('-f', '--filter',
+    help=_("Filter to only export a partial dataset."))
+export.set_defaults(direction='export')
 
-    survey.save()
+import_ = subparser.add_parser('import',
+    help=_("Import data to from a CSV file."))
+import_.add_argument('file',
+    help=_("The file to import."))
+import_.set_defaults(direction='import')
+
+@script.connect(parser)
+@script.logfile
+def csvdata(cmdline):
+    survey = model.survey.Survey.load(cmdline['project'])
+    import csvdata
+    if cmdline['direction'] == 'export':
+        return csvdata.csvdata_export(survey, cmdline)
+    elif cmdline['direction'] == 'import':
+        return csvdata.csvdata_import(survey, cmdline)
+    else:
+        raise AssertionError
 
 

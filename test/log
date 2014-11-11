@@ -1,0 +1,15 @@
+------------------------------------------------------------------------------
+- SDAPS -- gui
+------------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "sdaps.py", line 23, in <module>
+    sys.exit(sdaps.main(local_run = True))
+  File "/home/castro/Dev/sdaps/sdaps/__init__.py", line 75, in main
+    return cmdline['_func'](cmdline)
+  File "/home/castro/Dev/sdaps/sdaps/script.py", line 105, in decorated_function
+    result = function(cmdline)
+  File "/home/castro/Dev/sdaps/sdaps/gui/__init__.py", line 43, in gui
+    survey = model.survey.Survey.load(cmdline['project'])
+  File "/home/castro/Dev/sdaps/sdaps/model/survey.py", line 122, in load
+    file = bz2.BZ2File(os.path.join(survey_dir, 'survey'), 'r')
+IOError: [Errno 2] No such file or directory: 'test/survey'

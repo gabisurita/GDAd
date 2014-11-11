@@ -38,7 +38,7 @@
 %-------------------------------------------------------------------------------
 % load base-class
 %-------------------------------------------------------------------------------
-\LoadClass[twoside,headings=small]{scrreprt}
+\LoadClass[a4paper,twoside,headings=small]{scrreprt}
 
 
 %-------------------------------------------------------------------------------
@@ -104,7 +104,7 @@
 \newcolumntype{Y}{>{\raggedleft}X}
 
 % Einheiten
-\RequirePackage{siunitx}
+\RequirePackage[dp=1]{siunitx}
 
 % Listen
 \RequirePackage{mdwlist}
@@ -115,7 +115,7 @@
 
 % Zeichenprogramm
 \RequirePackage{tikz}
-\usetikzlibrary{calc}
+%\usetikzlibrary{calc}
 
 
 %-------------------------------------------------------------------------------
@@ -235,21 +235,17 @@
 \renewcommand{\author}[1]{\def\@author{#1}}
 \renewcommand{\title}[1]{\def\@title{#1}}
 
-\def\question{{\global\let\freeformsep\relax}\subsection*}
+\def\question{{\let\freeformsep\relax}\subsection*}
 
 \newcommand*{\decimaltopercent}[1]{
-  \pgfset{/pgf/number format/precision=0}
   \pgfmathparse{100 * #1}
-  \pgfmathroundtozerofill{\pgfmathresult}
   \SI{\pgfmathresult}{\percent}
 }
 
 \newlength{\einheit}
 \newcommand*{\markdiagram}{%
   \begin{tikzpicture}[semithick]
-    \pgfkeysgetvalue{/sdaps/mark/range}{\range}
-    \pgfmathsetlength{\einheit}{\linewidth/\range}
-    \foreach \x in {1,...,\range}
+    \foreach \x in {1,...,5}
     {
       \pgfkeysgetvalue{/sdaps/mark/\x/fraction}{\val}
       \fill[xshift=\x\einheit,yshift=2pt, color=sdapsmarkbarcolor, draw=sdapsmarkbarframecolor, very thin]
@@ -261,22 +257,22 @@
       \pgfkeysvalueof{/sdaps/mark/stddev}\einheit, \einheit)}
     \pgfmathsetlength\@tempdima{\pgfmathresult}
     \pgfmathparse{min(\pgfkeysvalueof{/sdaps/mark/mean}\einheit + %
-      \pgfkeysvalueof{/sdaps/mark/stddev}\einheit, \range\einheit)}
+      \pgfkeysvalueof{/sdaps/mark/stddev}\einheit, 5.0\einheit)}
     \pgfmathsetlength\@tempdimb{\pgfmathresult}
     \fill[color=sdapsmarkstddevcolor] %Varianz
       (\@tempdima, 0ex) rectangle (\@tempdimb, -1ex);
     \draw[line width=2pt,color=sdapsmarkmeancolor,%
       xshift=\pgfkeysvalueof{/sdaps/mark/mean}\einheit] %Mittelwert
       (0, 0ex) -- (0, -1ex-1pt);
-    \draw (+1.0\einheit,0ex) -- (\range\einheit,0ex); %Rahmen.Strich
-%    \draw (+0.5\einheit,2pt) -- (5.5\einheit,2pt); %Rahmen.Strich
-    \draw (+0.5\einheit,2pt) -- ($(\range\einheit,2pt) + (0.5\einheit,0)$); %Rahmen.Strich
-    \foreach \x in {1,...,\range}
+    \draw (+1.0\einheit,0ex) -- (5\einheit,0ex); %Rahmen.Strich
+    \draw (+0.5\einheit,2pt) -- (5.5\einheit,2pt); %Rahmen.Strich
+    \foreach \x in {1,...,5}
       \draw[xshift=\x\einheit] (0,0) -- (0, -1ex-1pt) node[below]{\footnotesize\x}; %Vert.Striche
   \end{tikzpicture}
 }
 
 \newenvironment{choicequestion}[1]{%
+  \offinterlineskip%
   \question{#1}%
   \tabularx{\linewidth}{Yrl}
 }{%
@@ -303,6 +299,7 @@
   \end{minipage}
   \hfill
   \begin{minipage}[c]{\markdiawidth}
+    \setlength{\einheit}{0.2\linewidth}
     \markdiagram
   \end{minipage}
   \\
@@ -313,11 +310,6 @@
   \freeformsep
   \pgfmathparse{min(#1, \linewidth)}
   \includegraphics[width=\pgfmathresult pt,keepaspectratio]{#2}\\
-  \def\freeformsep{\rule{\linewidth}{0.5pt}\\}
-}
-\newcommand*{\freeformtext}[1]{%
-  \freeformsep
-  #1
   \def\freeformsep{\rule{\linewidth}{0.5pt}\\}
 }
 
